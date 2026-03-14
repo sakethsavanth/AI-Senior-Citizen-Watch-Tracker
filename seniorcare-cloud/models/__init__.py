@@ -1,0 +1,1 @@
+# SeniorCare AI – Models package

@@ -1,0 +1,8 @@
+# ── SeniorCare AI .gitignore ───────────────
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+*.zip
+node_modules/
+.vscode/
