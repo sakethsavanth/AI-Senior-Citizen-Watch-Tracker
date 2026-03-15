@@ -1,0 +1,33 @@
+# Flutter build output
+seniorcare-ui/build/
+seniorcare-ui/.dart_tool/
+seniorcare-ui/.flutter-plugins
+seniorcare-ui/.flutter-plugins-dependencies
+
+# Pub cache
+pub-cache/
+E:/pub-cache/
+
+# Environment variables
+.env
+*.env
+
+# Android local files
+seniorcare-ui/android/.gradle/
+seniorcare-ui/android/local.properties
+seniorcare-ui/android/app/google-services.json
+
+# iOS
+seniorcare-ui/ios/Pods/
+seniorcare-ui/ios/.symlinks/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
