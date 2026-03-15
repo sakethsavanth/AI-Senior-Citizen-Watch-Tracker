@@ -152,6 +152,25 @@ class BedrockClient:
         )
         return self._invoke_and_parse(system_prompt, health_data)
 
+    def analyze_vitals_24h(self, health_data: Dict[str, Any]) -> Dict[str, Any]:
+        """VitalSync: 24hr vitals (HR, SpO2, HRV), daily summary, fall risk."""
+        system_prompt = (
+            "You are a senior vital-signs specialist. The data is for the last 24 hours. "
+            "Return ONLY valid JSON with: vital_status (normal|caution|critical), "
+            "hrv_interpretation (string), daily_message (e.g. morning walk reminder or evening sleep well), "
+            "recommendations (list of strings)."
+        )
+        return self._invoke_and_parse(system_prompt, health_data)
+
+    def analyze_mood(self, health_data: Dict[str, Any]) -> Dict[str, Any]:
+        """EmoCare: mood 1–5, social isolation, suggestions (call family, walk)."""
+        system_prompt = (
+            "You are an elderly mental wellness AI. Analyze mood and social context. "
+            "Return ONLY valid JSON with: mood_interpretation (string), "
+            "suggest_call (boolean), walk_reminder (boolean), recommendations (list of strings)."
+        )
+        return self._invoke_and_parse(system_prompt, health_data)
+
     # ── Internal ───────────────────────────────
     def _invoke_and_parse(self, system_prompt: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Invoke Claude with structured data and return parsed JSON."""
