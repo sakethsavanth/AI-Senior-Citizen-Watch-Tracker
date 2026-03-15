@@ -1,8 +1,7 @@
 """
-SeniorCare AI – Amazon Bedrock Client
-=======================================
-Wraps boto3 bedrock-runtime calls so every agent can invoke Claude
-through a single, tested interface.
+SeniorCare AI – OpenRouter Client
+=================================
+Provides a single Claude invocation interface via OpenRouter.
 
 Usage
 -----
@@ -18,7 +17,7 @@ import logging
 import os
 from typing import Dict, Any
 
-import boto3
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,25 +25,32 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 # ── Configuration ──────────────────────────────
-AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
-BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
-MAX_TOKENS = int(os.getenv("BEDROCK_MAX_TOKENS", "1024"))
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1/chat/completions")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
+MAX_TOKENS = int(os.getenv("OPENROUTER_MAX_TOKENS", os.getenv("BEDROCK_MAX_TOKENS", "1024")))
+OPENROUTER_REFERER = os.getenv("OPENROUTER_REFERER", "")
+OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "SeniorCare AI")
 
 
-class BedrockClient:
-    """Reusable Amazon Bedrock client for Claude model invocations."""
+class OpenRouterClient:
+    """Reusable OpenRouter client for Claude model invocations."""
 
-    def __init__(self, region: str = AWS_REGION, model_id: str = BEDROCK_MODEL_ID):
+    def __init__(self, model_id: str = OPENROUTER_MODEL):
+        self.api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+        if not self.api_key:
+            raise ValueError("OPENROUTER_API_KEY is required to call OpenRouter")
+
         self.model_id = model_id
-        self.client = boto3.client("bedrock-runtime", region_name=region)
-        logger.info("BedrockClient initialised (model=%s, region=%s)", model_id, region)
+        self.api_url = OPENROUTER_API_URL
+        self.session = requests.Session()
+        logger.info("OpenRouterClient initialised (model=%s)", model_id)
 
     # ──────────────────────────────────────────────
     # Core invocation
     # ──────────────────────────────────────────────
     def invoke(self, system_prompt: str, user_message: str) -> str:
         """
-        Send a prompt to Claude via Bedrock and return the text response.
+        Send a prompt to Claude via OpenRouter and return the text response.
 
         Parameters
         ----------
@@ -57,29 +63,48 @@ class BedrockClient:
         -------
         str  – Raw text response from Claude.
         """
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        if OPENROUTER_REFERER:
+            headers["HTTP-Referer"] = OPENROUTER_REFERER
+        if OPENROUTER_APP_TITLE:
+            headers["X-Title"] = OPENROUTER_APP_TITLE
+
+        payload = {
+            "model": self.model_id,
             "max_tokens": MAX_TOKENS,
-            "system": system_prompt,
             "messages": [
-                {"role": "user", "content": user_message}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
             ],
-        })
+        }
 
         try:
-            response = self.client.invoke_model(
-                modelId=self.model_id,
-                contentType="application/json",
-                accept="application/json",
-                body=body,
+            response = self.session.post(
+                self.api_url,
+                headers=headers,
+                json=payload,
+                timeout=60,
             )
-            result = json.loads(response["body"].read())
-            text = result["content"][0]["text"]
-            logger.debug("Bedrock response (truncated): %s", text[:200])
+            response.raise_for_status()
+            result = response.json()
+            message = result.get("choices", [{}])[0].get("message", {})
+            content = message.get("content", "")
+
+            if isinstance(content, str):
+                text = content
+            elif isinstance(content, list):
+                text = "".join(block.get("text", "") for block in content if isinstance(block, dict))
+            else:
+                text = str(content)
+
+            logger.debug("OpenRouter response (truncated): %s", text[:200])
             return text
 
         except Exception as exc:
-            logger.error("Bedrock invocation failed: %s", exc, exc_info=True)
+            logger.error("OpenRouter invocation failed: %s", exc, exc_info=True)
             raise
 
     # ──────────────────────────────────────────────
@@ -117,7 +142,7 @@ class BedrockClient:
                 cleaned = cleaned.rsplit("```", 1)[0]
             return json.loads(cleaned)
         except json.JSONDecodeError:
-            logger.warning("Could not parse Bedrock JSON; returning default.")
+            logger.warning("Could not parse model JSON; returning default.")
             return {
                 "risk_level": "medium",
                 "recommended_action": "alert",
@@ -184,3 +209,7 @@ class BedrockClient:
         except json.JSONDecodeError:
             logger.warning("JSON parse failed; wrapping raw text.")
             return {"raw_response": raw[:500]}
+
+
+class BedrockClient(OpenRouterClient):
+    """Backwards-compatible alias for legacy imports."""
