@@ -17,6 +17,10 @@ import 'screens/family/weekly_report_screen.dart';
 import 'screens/web/web_dashboard_screen.dart';
 import 'screens/web/dosage_log_screen.dart';
 import 'screens/web/call_history_screen.dart';
+import 'screens/senior/mood_input_screen.dart';
+import 'screens/senior/family_contacts_screen.dart';
+import 'screens/family/health_records_screen.dart';
+import 'screens/web/agent_results_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.read(authProvider);
@@ -91,6 +95,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const EmergencyScreen(),
       ),
       GoRoute(
+        path: '/senior/mood',
+        builder: (_, __) => const MoodInputScreen(),
+      ),
+      GoRoute(
+        path: '/senior/family-contacts',
+        builder: (_, __) => const FamilyContactsScreen(),
+      ),
+      GoRoute(
         path: '/family/home',
         builder: (_, __) => const FamilyDashboardScreen(),
       ),
@@ -103,6 +115,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const WeeklyReportScreen(),
       ),
       GoRoute(
+        path: '/family/health-records',
+        builder: (_, __) => const HealthRecordsScreen(),
+      ),
+      GoRoute(
         path: '/dashboard',
         builder: (_, __) => const WebDashboardScreen(),
       ),
@@ -113,6 +129,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/call-history',
         builder: (_, __) => const CallHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/dashboard/agent-results',
+        builder: (_, __) => const AgentResultsScreen(),
       ),
     ],
   );

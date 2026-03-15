@@ -47,9 +47,9 @@ class AICallActiveScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        '"Did you take your Lisinopril at 2 PM today?"',
-                        style: TextStyle(fontSize: 14),
+                      Text(
+                        '"${callData['question'] ?? 'Did you take your medication today?'}"',
+                        style: const TextStyle(fontSize: 14),
                       ),
                     ],
                   ),

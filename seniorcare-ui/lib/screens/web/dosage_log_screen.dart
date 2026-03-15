@@ -1,17 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
+import '../../services/api_service.dart';
 import '../../models/medication.dart';
+import '../../widgets/scenario_picker.dart';
 
-class DosageLogScreen extends StatelessWidget {
+class DosageLogScreen extends ConsumerWidget {
   const DosageLogScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final api = ref.watch(apiServiceProvider);
+    final doseLog = api.getDoseLog();
+    final weekLogs = api.getWeekDoseLogs();
     final dayLetters = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+    // Compute week status from weekLogs
+    final weekDoseStatus = <String>[];
+    for (int i = 0; i < 7; i++) {
+      if (i < weekLogs.length) {
+        final dayEntries = weekLogs[i].entries;
+        if (dayEntries.every((e) => e.status == DoseStatus.taken)) {
+          weekDoseStatus.add('taken');
+        } else if (dayEntries.any((e) => e.status == DoseStatus.missed)) {
+          weekDoseStatus.add('missed');
+        } else {
+          weekDoseStatus.add('pending');
+        }
+      } else {
+        weekDoseStatus.add('pending');
+      }
+    }
+    final taken = weekDoseStatus.where((s) => s == 'taken').length;
+    final adherencePct = weekDoseStatus.isEmpty ? 0 : (taken * 100 / weekDoseStatus.length).round();
+
     return Scaffold(
+      floatingActionButton: const ScenarioPickerFab(),
       appBar: AppBar(
         title: const Text('Dosage Log'),
         leading: IconButton(
@@ -24,24 +49,19 @@ class DosageLogScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Week picker
             Row(
               children: [
-                Text(
-                  'Week of Mar 10 \u2013 16, 2026',
-                  style: AppTextStyles.title,
-                ),
+                Text('This Week', style: AppTextStyles.title),
                 const SizedBox(width: 8),
                 Icon(Icons.calendar_today, size: 14, color: Colors.grey[500]),
               ],
             ),
             Text(
-              '$normalAdherencePct% adherence this week',
+              '$adherencePct% adherence this week',
               style: AppTextStyles.label,
             ),
             const SizedBox(height: 16),
 
-            // Week calendar strip
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(7, (i) {
@@ -98,8 +118,7 @@ class DosageLogScreen extends StatelessWidget {
             const Divider(),
             const SizedBox(height: 12),
 
-            // Dose entries
-            for (final entry in mockDoseLog.entries) ...[
+            for (final entry in doseLog.entries) ...[
               Text(
                 entry.medName,
                 style: const TextStyle(

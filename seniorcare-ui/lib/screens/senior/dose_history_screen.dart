@@ -1,15 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
 import '../../models/medication.dart';
 import '../../widgets/badge_widget.dart';
+import '../../widgets/scenario_picker.dart';
 import '../../widgets/senior_nav_bar.dart';
 
-class DoseHistoryScreen extends StatelessWidget {
+class DoseHistoryScreen extends ConsumerWidget {
   const DoseHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final api = ref.watch(apiServiceProvider);
+    final doseLog = api.getDoseLog();
+    final weekLogs = api.getWeekDoseLogs();
+
+    // Build week status from weekly logs
+    final weekDoseStatus = weekLogs.map((log) {
+      if (log.entries.isEmpty) return 'pending';
+      final allTaken = log.entries.every((e) => e.status == DoseStatus.taken);
+      final anyMissed = log.entries.any((e) => e.status == DoseStatus.missed);
+      if (allTaken) return 'taken';
+      if (anyMissed) return 'missed';
+      return 'pending';
+    }).toList();
+
+    // Pad to 7 days
+    while (weekDoseStatus.length < 7) {
+      weekDoseStatus.add('pending');
+    }
+
+    final adherence = weekDoseStatus.where((s) => s == 'taken').length * 100 ~/ 7;
     final dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return Scaffold(
@@ -19,7 +41,7 @@ class DoseHistoryScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: StatusBadge(
-              label: '$normalAdherencePct%',
+              label: '$adherence%',
               bgColor: AppColors.okBg,
               textColor: AppColors.okText,
             ),
@@ -27,13 +49,14 @@ class DoseHistoryScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: const SeniorNavBar(currentIndex: 1),
+      floatingActionButton: const ScenarioPickerFab(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mar 10\u201316 \u2022 $normalAdherencePct% adherence',
+              'Mar 10\u201316 \u2022 $adherence% adherence',
               style: AppTextStyles.seniorLabel,
             ),
             const SizedBox(height: 12),
@@ -96,7 +119,7 @@ class DoseHistoryScreen extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Dose entries grouped by drug
-            for (final entry in mockDoseLog.entries) ...[
+            for (final entry in doseLog.entries) ...[
               Text(
                 entry.medName,
                 style: const TextStyle(

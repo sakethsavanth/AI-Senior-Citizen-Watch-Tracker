@@ -21,11 +21,9 @@ class SeniorNavBar extends StatelessWidget {
           case 1:
             context.go('/senior/medications');
           case 2:
-            // Family tab — placeholder
-            break;
+            context.go('/senior/family-contacts');
           case 3:
-            // Settings — placeholder
-            break;
+            context.go('/senior/mood');
         }
       },
       items: const [

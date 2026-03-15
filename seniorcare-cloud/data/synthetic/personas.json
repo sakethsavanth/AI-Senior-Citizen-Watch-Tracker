@@ -11,7 +11,22 @@
         { "name": "Sarah", "phone": "+14165559876", "last_contact_iso": "2026-03-12T14:00:00Z" },
         { "name": "Raj", "phone": "+14165554321", "last_contact_iso": "2026-03-10T09:00:00Z" }
       ],
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "medications": [
+        { "name": "Lisinopril 10mg", "schedule": "8:00 AM", "pillsLeft": 12 },
+        { "name": "Metoprolol 25mg", "schedule": "8:00 PM", "pillsLeft": 8 },
+        { "name": "Aspirin 81mg", "schedule": "8:00 AM", "pillsLeft": 20 }
+      ],
+      "drug_interactions": [
+        { "pair": "Lisinopril + Potassium", "severity": "moderate" },
+        { "pair": "Aspirin + Ibuprofen", "severity": "moderate" }
+      ],
+      "lab_results": {
+        "blood_pressure": { "value": "138/82", "flag": "borderline" },
+        "cholesterol": { "value": "210 mg/dL", "flag": "high" },
+        "glucose": { "value": "105 mg/dL", "flag": "normal" },
+        "potassium": { "value": "5.1 mEq/L", "flag": "borderline" }
+      }
     },
     {
       "user_id": "senior_002",
@@ -22,7 +37,20 @@
       "family_contacts": [
         { "name": "Emily", "phone": "+14165550002", "last_contact_iso": "2026-03-14T08:00:00Z" }
       ],
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "medications": [
+        { "name": "Lisinopril 20mg", "schedule": "9:00 AM", "pillsLeft": 5 },
+        { "name": "Atorvastatin 40mg", "schedule": "9:00 PM", "pillsLeft": 14 }
+      ],
+      "drug_interactions": [
+        { "pair": "Lisinopril + NSAIDs", "severity": "moderate" }
+      ],
+      "lab_results": {
+        "blood_pressure": { "value": "145/90", "flag": "high" },
+        "cholesterol": { "value": "185 mg/dL", "flag": "normal" },
+        "creatinine": { "value": "1.4 mg/dL", "flag": "borderline" },
+        "glucose": { "value": "98 mg/dL", "flag": "normal" }
+      }
     },
     {
       "user_id": "senior_003",
@@ -34,7 +62,22 @@
         { "name": "Maria", "phone": "+14165557778", "last_contact_iso": "2026-03-11T18:00:00Z" },
         { "name": "Carlos", "phone": "+14165557779", "last_contact_iso": "2026-03-09T12:00:00Z" }
       ],
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "medications": [
+        { "name": "Metformin 500mg", "schedule": "8:00 AM, 6:00 PM", "pillsLeft": 18 },
+        { "name": "Glipizide 5mg", "schedule": "7:30 AM", "pillsLeft": 10 },
+        { "name": "Vitamin D 1000IU", "schedule": "8:00 AM", "pillsLeft": 30 }
+      ],
+      "drug_interactions": [
+        { "pair": "Metformin + Alcohol", "severity": "high" },
+        { "pair": "Glipizide + Fluconazole", "severity": "moderate" }
+      ],
+      "lab_results": {
+        "blood_pressure": { "value": "128/78", "flag": "normal" },
+        "HbA1c": { "value": "7.2%", "flag": "borderline" },
+        "glucose": { "value": "142 mg/dL", "flag": "high" },
+        "cholesterol": { "value": "195 mg/dL", "flag": "normal" }
+      }
     }
   ]
 }

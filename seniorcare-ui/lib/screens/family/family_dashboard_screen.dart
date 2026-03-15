@@ -1,47 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/scenario_provider.dart';
+import '../../models/alert.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
 import '../../widgets/badge_widget.dart';
 import '../../widgets/activity_row.dart';
 import '../../widgets/family_nav_bar.dart';
+import '../../widgets/scenario_picker.dart';
 
-class FamilyDashboardScreen extends StatelessWidget {
+class FamilyDashboardScreen extends ConsumerWidget {
   const FamilyDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final healthData = ref.watch(scenarioHealthDataProvider);
+    final persona = ref.watch(currentPersonaDataProvider);
+    final triage = ref.watch(triageResultProvider);
+    final api = ref.watch(apiServiceProvider);
+    final alerts = api.getAlerts();
+
+    final hr = healthData['heart_rate'] as int? ?? 72;
+    final spo2 = healthData['spo2'] as int? ?? 98;
+    final steps = healthData['steps'] as int? ?? 0;
+    final pillCount = healthData['pill_count'] as int? ?? 30;
+    final risk = triage['overall_risk'] as String? ?? 'low';
+    final seniorName = persona['name'] as String? ?? 'Senior';
+    final initials = seniorName.split(' ').map((w) => w.isNotEmpty ? w[0] : '').join().toUpperCase();
+
+    Color statusBg;
+    Color statusText;
+    String statusLabel;
+    switch (risk) {
+      case 'high':
+        statusBg = AppColors.criticalBg;
+        statusText = AppColors.criticalText;
+        statusLabel = 'Critical';
+      case 'medium':
+        statusBg = AppColors.warningBg;
+        statusText = AppColors.warningText;
+        statusLabel = 'Watch';
+      default:
+        statusBg = AppColors.okBg;
+        statusText = AppColors.okText;
+        statusLabel = 'All Good';
+    }
     return Scaffold(
       bottomNavigationBar: const FamilyNavBar(currentIndex: 0),
+      floatingActionButton: const ScenarioPickerFab(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Dad's Health", style: AppTextStyles.title),
-                  const StatusBadge(
-                    label: 'All Good',
-                    bgColor: AppColors.okBg,
-                    textColor: AppColors.okText,
-                  ),
+                  Text("$seniorName's Health", style: AppTextStyles.title),
+                  StatusBadge(label: statusLabel, bgColor: statusBg, textColor: statusText),
                 ],
               ),
               const SizedBox(height: 12),
 
-              // Parent card
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFE2E8F0),
-                    width: 0.5,
-                  ),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 0.5),
                 ),
                 child: Column(
                   children: [
@@ -50,104 +77,72 @@ class FamilyDashboardScreen extends StatelessWidget {
                         CircleAvatar(
                           radius: 18,
                           backgroundColor: AppColors.aiActionBg,
-                          child: Text(
-                            'MS',
-                            style: TextStyle(
-                              color: AppColors.brandPrimary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11,
-                            ),
-                          ),
+                          child: Text(initials,
+                              style: TextStyle(color: AppColors.brandPrimary, fontWeight: FontWeight.w600, fontSize: 11)),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                seniorName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              Text(
-                                '$location \u2022 2m ago',
-                                style: AppTextStyles.micro,
-                              ),
+                              Text(seniorName,
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                              Text('${persona['timezone'] ?? 'Home'} \u2022 2m ago', style: AppTextStyles.micro),
                             ],
                           ),
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(
-                              '$normalStreakDays day streak',
-                              style: TextStyle(
-                                fontSize: 8,
-                                color: AppColors.okText,
-                              ),
-                            ),
-                            Text(
-                              '$normalAdherencePct% adherence',
-                              style: AppTextStyles.micro,
-                            ),
+                            Text('$pillCount pills left',
+                                style: TextStyle(fontSize: 8, color: pillCount < 5 ? AppColors.criticalText : AppColors.okText)),
+                            Text('${alerts.length} alerts', style: AppTextStyles.micro),
                           ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Vital chips
-                    Row(
-                      children: [
-                        _VitalChip('HR', '$normalHeartRate'),
-                        const SizedBox(width: 8),
-                        _VitalChip('SpO2', '$normalSpo2%'),
-                        const SizedBox(width: 8),
-                        _VitalChip('Steps', '3.2k'),
-                      ],
-                    ),
+                    Row(children: [
+                      _VitalChip('HR', '$hr'),
+                      const SizedBox(width: 8),
+                      _VitalChip('SpO2', '$spo2%'),
+                      const SizedBox(width: 8),
+                      _VitalChip('Steps', steps > 999 ? '${(steps / 1000).toStringAsFixed(1)}k' : '$steps'),
+                    ]),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Today's Activity
-              Text(
-                "Today's Activity",
-                style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w600),
-              ),
+              Text("Today's Activity",
+                  style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              ActivityRow(
-                dotColor: AppColors.okText,
-                text: '8:07 AM \u2014 Metformin taken',
-              ),
-              ActivityRow(
-                dotColor: AppColors.brandPrimary,
-                text: '10:30 AM \u2014 30 min walk',
-              ),
-              ActivityRow(
-                dotColor: AppColors.brandPrimary,
-                text: '1:04 PM \u2014 AI call: confirmed dose',
-              ),
-              ActivityRow(
-                dotColor: AppColors.warningText,
-                text: 'Lisinopril: 3 pills \u2014 refill ordered',
-              ),
+              ...alerts.take(4).map((alert) => ActivityRow(
+                dotColor: alert.type == AlertType.critical
+                    ? AppColors.criticalText
+                    : alert.type == AlertType.warning
+                        ? AppColors.warningText
+                        : alert.type == AlertType.aiAction
+                            ? AppColors.brandPrimary
+                            : AppColors.okText,
+                text: '${alert.time} \u2014 ${alert.message}',
+              )),
               const SizedBox(height: 16),
 
-              // Video Call button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Calling $seniorName...'),
+                          backgroundColor: AppColors.brandPrimary),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.brandPrimary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: Text('Video Call $seniorName'),
                 ),

@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
 import '../../widgets/family_nav_bar.dart';
+import '../../widgets/scenario_picker.dart';
 
-class WeeklyReportScreen extends StatelessWidget {
+class WeeklyReportScreen extends ConsumerWidget {
   const WeeklyReportScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final api = ref.watch(apiServiceProvider);
+    final summary = api.getWeeklySummary();
+
+    final avgHR = summary['avg_hr'];
+    final avgSpo2 = summary['avg_spo2'];
+    final avgSleep = summary['avg_sleep'];
+    final avgSteps = summary['avg_steps'];
+    final adherence = summary['adherence_pct'];
+    final aiSummary = summary['ai_summary'] as String;
+    final weeklySteps = (summary['weekly_steps'] as List).cast<int>();
     return Scaffold(
       bottomNavigationBar: const FamilyNavBar(currentIndex: 1),
+      floatingActionButton: const ScenarioPickerFab(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -30,11 +43,11 @@ class WeeklyReportScreen extends StatelessWidget {
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
                 children: [
-                  _MetricTile('Avg HR', '$weeklyAvgHR', 'bpm', null),
+                  _MetricTile('Avg HR', '$avgHR', 'bpm', null),
                   _MetricTile(
-                      'Adherence', '$weeklyAdherence%', '', AppColors.okText),
-                  _MetricTile('Avg Sleep', '$weeklyAvgSleep', 'h', null),
-                  _MetricTile('Avg Steps', weeklyAvgSteps, '', null),
+                      'Adherence', '$adherence%', '', AppColors.okText),
+                  _MetricTile('Avg Sleep', '$avgSleep', 'h', null),
+                  _MetricTile('Avg Steps', '$avgSteps', '', null),
                 ],
               ),
               const SizedBox(height: 12),
@@ -59,7 +72,7 @@ class WeeklyReportScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(weeklyAISummary, style: TextStyle(fontSize: 12)),
+                    Text(aiSummary, style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),

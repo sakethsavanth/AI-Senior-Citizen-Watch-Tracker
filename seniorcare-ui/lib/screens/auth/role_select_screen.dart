@@ -68,7 +68,11 @@ class RoleSelectScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a role above to continue')),
+                  );
+                },
                 child: Text(
                   'Already have an account? Sign in',
                   style: TextStyle(fontSize: 11, color: AppColors.brandPrimary),

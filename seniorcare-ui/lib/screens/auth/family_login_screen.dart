@@ -162,7 +162,11 @@ class _FamilyLoginScreenState extends ConsumerState<FamilyLoginScreen> {
 
               Center(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Monitoring setup coming soon')),
+                    );
+                  },
                   child: Text(
                     'New here? Set up monitoring',
                     style: TextStyle(

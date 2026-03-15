@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/scenario_provider.dart';
+import '../../models/alert.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
 import '../../widgets/alert_row.dart';
+import '../../widgets/scenario_picker.dart';
 
-class WebDashboardScreen extends StatefulWidget {
+class WebDashboardScreen extends ConsumerStatefulWidget {
   const WebDashboardScreen({super.key});
 
   @override
-  State<WebDashboardScreen> createState() => _WebDashboardScreenState();
+  ConsumerState<WebDashboardScreen> createState() => _WebDashboardScreenState();
 }
 
-class _WebDashboardScreenState extends State<WebDashboardScreen> {
+class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
   int _selectedIndex = 0;
 
   final _sidebarItems = [
@@ -28,7 +32,17 @@ class _WebDashboardScreenState extends State<WebDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final alerts = ref.watch(apiServiceProvider).getAlerts();
+    final criticalCount = alerts.where((a) => a.type == AlertType.critical).length;
+    final persona = ref.watch(currentPersonaDataProvider);
+    final initials = (persona['name'] as String? ?? 'AS')
+        .split(' ')
+        .map((w) => w.isNotEmpty ? w[0] : '')
+        .take(2)
+        .join();
+
     return Scaffold(
+      floatingActionButton: const ScenarioPickerFab(),
       appBar: AppBar(
         backgroundColor: AppColors.brandDark,
         title: Row(
@@ -57,27 +71,28 @@ class _WebDashboardScreenState extends State<WebDashboardScreen> {
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
             const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.criticalBg,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '1 Critical Alert',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.criticalText,
-                  fontWeight: FontWeight.w600,
+            if (criticalCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.criticalBg,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '$criticalCount Critical Alert${criticalCount > 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.criticalText,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
             const SizedBox(width: 12),
             CircleAvatar(
               radius: 14,
               backgroundColor: AppColors.parentRoleBg,
               child: Text(
-                'AS',
+                initials,
                 style: TextStyle(
                   fontSize: 10,
                   color: AppColors.parentRoleText,
@@ -162,10 +177,14 @@ class _WebDashboardScreenState extends State<WebDashboardScreen> {
             ),
             onTap: () {
               setState(() => _selectedIndex = index);
-              if (label == 'Dosage Log') {
-                context.go('/dashboard/dosage-log');
-              } else if (label == 'Call History') {
-                context.go('/dashboard/call-history');
+              switch (label) {
+                case 'Dosage Log':
+                  context.go('/dashboard/dosage-log');
+                case 'Call History':
+                  context.go('/dashboard/call-history');
+                case 'Alerts':
+                  // Stay in dashboard with alert view
+                  break;
               }
             },
           );
@@ -175,41 +194,44 @@ class _WebDashboardScreenState extends State<WebDashboardScreen> {
   }
 
   Widget _buildMainContent() {
+    final healthData = ref.watch(scenarioHealthDataProvider);
+    final triage = ref.watch(triageResultProvider);
+    final api = ref.watch(apiServiceProvider);
+    final alerts = api.getAlerts();
+
+    final hr = healthData['heart_rate'] as int? ?? 72;
+    final spo2 = healthData['spo2'] as int? ?? 98;
+    final steps = healthData['steps'] as int? ?? 0;
+    final risk = triage['overall_risk'] as String? ?? 'low';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 5 metric cards
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              _DashMetricCard(
-                  'Heart Rate', '72 bpm', 'Normal range', AppColors.brandPrimary),
-              _DashMetricCard(
-                  'SpO2', '98%', 'Excellent', AppColors.okText),
-              _DashMetricCard(
-                  'Dose Streak', '7 days', '95% adherence', AppColors.okText),
-              _DashMetricCard('Last AI Call', '1:04 PM', 'Confirmed dose',
-                  AppColors.brandPrimary),
-              _DashMetricCard(
-                  'Steps Today', '3,241', 'Goal: 5,000', Colors.black87),
+              _DashMetricCard('Heart Rate', '$hr bpm',
+                  (hr > 120 || hr < 50) ? 'Abnormal' : 'Normal range',
+                  (hr > 120 || hr < 50) ? AppColors.criticalText : AppColors.brandPrimary),
+              _DashMetricCard('SpO2', '$spo2%',
+                  spo2 < 92 ? 'Low!' : 'Excellent',
+                  spo2 < 92 ? AppColors.criticalText : AppColors.okText),
+              _DashMetricCard('Risk Level', risk.toUpperCase(), '${alerts.length} alerts',
+                  risk == 'high' ? AppColors.criticalText : risk == 'medium' ? AppColors.warningText : AppColors.okText),
+              _DashMetricCard('Steps Today',
+                  steps > 999 ? '${(steps / 1000).toStringAsFixed(1)}k' : '$steps',
+                  'Goal: 5,000', Colors.black87),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Recent Alerts
-          const Text(
-            'Recent Alerts',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
-            ),
-          ),
+          const Text('Recent Alerts',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
           const SizedBox(height: 8),
-          for (final alert in mockAlerts) AlertRow(alert: alert),
+          for (final alert in alerts) AlertRow(alert: alert),
         ],
       ),
     );

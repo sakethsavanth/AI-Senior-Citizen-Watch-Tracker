@@ -23,14 +23,13 @@ class FamilyNavBar extends StatelessWidget {
           case 2:
             context.go('/family/alerts');
           case 3:
-            // Settings — placeholder
-            break;
+            context.go('/family/health-records');
         }
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.medication_liquid), label: 'Dosage'),
+            icon: Icon(Icons.medication_liquid), label: 'Reports'),
         BottomNavigationBarItem(
             icon: Icon(Icons.notifications), label: 'Alerts'),
         BottomNavigationBarItem(

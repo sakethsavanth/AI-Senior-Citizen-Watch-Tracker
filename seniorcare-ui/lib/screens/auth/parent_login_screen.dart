@@ -140,7 +140,10 @@ class _ParentLoginScreenState extends ConsumerState<ParentLoginScreen> {
               // Face ID link
               Center(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ref.read(authProvider).loginAsParent();
+                    context.go('/senior/home');
+                  },
                   child: Text(
                     'Use Face ID instead',
                     style: TextStyle(
