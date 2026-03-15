@@ -1,1 +1,0 @@
-# ElderHarmony – VitalSync Agent
