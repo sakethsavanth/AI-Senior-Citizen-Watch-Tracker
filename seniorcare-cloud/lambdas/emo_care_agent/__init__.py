@@ -1,1 +1,0 @@
-# ElderHarmony – EmoCare Agent
