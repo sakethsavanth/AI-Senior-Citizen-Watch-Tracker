@@ -1,8 +1,8 @@
 """
-SeniorCare AI – Event Router
-==============================
-Examines a HealthPayload and determines which downstream agent(s) should
-be invoked.  Returns a list of routing decisions the Orchestrator will act on.
+ElderHarmony – Event Router
+============================
+Determines which of the 5 agents to invoke: VitalSync, Medicine, EmoCare,
+Calling, HealthRecords. Uses 24hr vitals, HRV, fall, mood, and refill rules.
 """
 
 from __future__ import annotations
@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 # ──────────────────────────────────────────────
-# Agent identifiers (match Lambda function names)
+# ElderHarmony 5 agents
 # ──────────────────────────────────────────────
-SLEEP_AGENT = "sleep_agent"
-ACTIVITY_AGENT = "activity_agent"
-MEDICATION_AGENT = "medication_agent"
-REFILL_AGENT = "refill_agent"
+VITAL_SYNC_AGENT = "vital_sync_agent"
+MEDICINE_AGENT = "medicine_agent"
+EMO_CARE_AGENT = "emo_care_agent"
 CALLING_AGENT = "calling_agent"
+HEALTH_RECORDS_AGENT = "health_records_agent"
 
 
 @dataclass
@@ -46,87 +46,96 @@ def determine_routes(
     bedrock_analysis: Dict[str, Any] | None = None,
 ) -> List[RoutingDecision]:
     """
-    Rule-based + AI-augmented routing logic.
-
-    Parameters
-    ----------
-    health : HealthPayload
-        Parsed wearable data.
-    bedrock_analysis : dict, optional
-        Output from Bedrock risk analysis
-        e.g. {"risk_level": "high", "recommended_action": "call"}
-
-    Returns
-    -------
-    list[RoutingDecision]
-        Ordered list of agents to invoke.
+    Route to ElderHarmony agents. Vitals = 24hr period.
+    - VitalSync: always (daily guardian); HRV low / fall → alerts
+    - Medicine: schedule 8/12/18/21; low pills or 3-day miss → refill
+    - EmoCare: when mood_score present; low mood → also trigger Calling
+    - Calling: emergency, vital anomaly, fall, or EmoCare low mood
+    - HealthRecords: always (passive sync / prep)
     """
     routes: List[RoutingDecision] = []
+    payload = health.to_dict()
 
-    # ── 1. Sleep Agent ─────────────────────────
-    if health.is_sleep_deficit:
-        logger.info("Routing → Sleep Agent (sleep_hours=%.1f)", health.sleep_hours)
-        routes.append(RoutingDecision(
-            agent_name=SLEEP_AGENT,
-            reason=f"Sleep deficit detected: {health.sleep_hours}h (threshold < 6h)",
-            payload=health.to_dict(),
-        ))
-
-    # ── 2. Activity Agent ──────────────────────
-    if health.is_inactive:
-        logger.info("Routing → Activity Agent (idle=%d min)", health.last_movement_minutes)
-        routes.append(RoutingDecision(
-            agent_name=ACTIVITY_AGENT,
-            reason=f"Inactivity detected: {health.last_movement_minutes} min (threshold > 240 min)",
-            payload=health.to_dict(),
-        ))
-
-    # ── 3. Medication Agent ────────────────────
-    # Always invoked during medication windows; for hackathon, always trigger
-    logger.info("Routing → Medication Agent (always active during demo)")
+    # ── 1. VitalSync (Continuous Guardian) ─────
+    # Always run for daily summary; 24hr vitals, HRV, fall
+    reason_parts = ["24hr vitals + daily guardian"]
+    if health.fall_detected:
+        reason_parts.append("FALL DETECTED")
+    if health.is_hrv_low:
+        reason_parts.append(f"HRV low ({health.hrv_percent}%)")
     routes.append(RoutingDecision(
-        agent_name=MEDICATION_AGENT,
-        reason="Medication adherence check (time-window active)",
-        payload=health.to_dict(),
+        agent_name=VITAL_SYNC_AGENT,
+        reason="; ".join(reason_parts),
+        payload=payload,
     ))
 
-    # ── 4. Refill Agent ────────────────────────
+    # ── 2. Medicine (8AM, 12PM, 6PM, 9PM) ──────
+    # Always run for adherence; refill on low pills or 3-day miss
+    reason = "Medication adherence (schedule 8/12/18/21)"
     if health.is_pill_low:
-        logger.info("Routing → Refill Agent (pill_count=%d)", health.pill_count)
+        reason += f"; low pills ({health.pill_count})"
+    if health.needs_refill_3day_miss:
+        reason += "; 3-day miss → auto-refill"
+    routes.append(RoutingDecision(
+        agent_name=MEDICINE_AGENT,
+        reason=reason,
+        payload=payload,
+    ))
+
+    # ── 3. EmoCare (Mental Wellness) ───────────
+    # When mood_score present; score < 3 → also trigger Calling
+    if health.mood_score is not None:
+        reason = f"Mood check (score={health.mood_score}/5)"
+        if health.is_mood_low:
+            reason += " – low mood, trigger Calling"
         routes.append(RoutingDecision(
-            agent_name=REFILL_AGENT,
-            reason=f"Low pill inventory: {health.pill_count} remaining (threshold < 3)",
-            payload=health.to_dict(),
+            agent_name=EMO_CARE_AGENT,
+            reason=reason,
+            payload=payload,
         ))
 
-    # ── 5. Calling Agent (AI-driven) ───────────
-    if bedrock_analysis:
+    # ── 4. Calling (Social / Emergency) ───────
+    # Fall → emergency; HRV low / vitals / AI risk / EmoCare low mood
+    call_reason = None
+    call_payload = {**payload}
+
+    if health.fall_detected:
+        call_reason = "EMERGENCY: Fall detected – ambulance + family"
+        call_payload["emergency_type"] = "fall"
+    elif health.is_hrv_low:
+        call_reason = f"HRV < 40% ({health.hrv_percent}%) – possible infection, doctor visit?"
+        call_payload["risk_level"] = "medium"
+        call_payload["recommended_action"] = "alert"
+    elif health.is_heart_rate_abnormal or health.is_spo2_low:
+        call_reason = f"Vital anomaly: HR={health.heart_rate_24h}, SpO2={health.spo2_24h}"
+        call_payload["risk_level"] = "medium"
+        call_payload["recommended_action"] = "alert"
+    elif bedrock_analysis:
         risk = bedrock_analysis.get("risk_level", "low")
         action = bedrock_analysis.get("recommended_action", "monitor")
-        if risk in ("high",) or action in ("call", "alert"):
-            logger.info("Routing → Calling Agent (risk=%s, action=%s)", risk, action)
-            routes.append(RoutingDecision(
-                agent_name=CALLING_AGENT,
-                reason=f"Bedrock AI risk={risk}, recommended_action={action}",
-                payload={
-                    **health.to_dict(),
-                    "risk_level": risk,
-                    "recommended_action": action,
-                },
-            ))
+        if risk == "high" or action in ("call", "alert"):
+            call_reason = f"Bedrock AI: risk={risk}, action={action}"
+            call_payload["risk_level"] = risk
+            call_payload["recommended_action"] = action
+    elif health.is_mood_low:
+        call_reason = f"EmoCare: low mood (score={health.mood_score}) – trigger call to family"
+        call_payload["risk_level"] = "medium"
+        call_payload["recommended_action"] = "call"
+        call_payload["trigger"] = "emo_care"
 
-    # ── Also trigger Calling Agent for vital anomalies ──
-    if health.is_heart_rate_abnormal or health.is_spo2_low:
-        already_routed = any(r.agent_name == CALLING_AGENT for r in routes)
-        if not already_routed:
-            logger.info("Routing → Calling Agent (vital anomaly)")
-            routes.append(RoutingDecision(
-                agent_name=CALLING_AGENT,
-                reason=(
-                    f"Vital anomaly: HR={health.heart_rate}, SpO2={health.spo2}"
-                ),
-                payload=health.to_dict(),
-            ))
+    if call_reason:
+        routes.append(RoutingDecision(
+            agent_name=CALLING_AGENT,
+            reason=call_reason,
+            payload=call_payload,
+        ))
 
-    logger.info("Total routes determined: %d", len(routes))
+    # ── 5. HealthRecords (Passive) ─────────────
+    routes.append(RoutingDecision(
+        agent_name=HEALTH_RECORDS_AGENT,
+        reason="Sync pharmacy/doctor; med interaction; visit prep",
+        payload=payload,
+    ))
+
+    logger.info("ElderHarmony routes: %d agents – %s", len(routes), [r.agent_name for r in routes])
     return routes
