@@ -11,9 +11,14 @@ To add a new communication tool:
 
 import json
 import logging
+import os
 import railtracks as rt
 
 logger = logging.getLogger(__name__)
+
+# Fallback phone numbers from .env when payload doesn't include them
+_DEFAULT_SENIOR_NUMBER = os.getenv("SENIOR_PHONE_NUMBER", "")
+_DEFAULT_FAMILY_NUMBER = os.getenv("FAMILY_PHONE_NUMBER", "")
 
 
 @rt.function_node
@@ -30,10 +35,15 @@ def call_senior(to_number: str, message: str) -> dict:
     Returns:
         dict with call_sid, status, and to number.
     """
+    number = to_number or _DEFAULT_SENIOR_NUMBER
+    if not number:
+        logger.warning("call_senior: no phone number provided and SENIOR_PHONE_NUMBER not set")
+        return {"call_sid": None, "status": "skipped", "reason": "no_senior_number"}
+
     from services.twilio_service import TwilioService
 
     svc = TwilioService()
-    result = svc.call_senior(to_number, message)
+    result = svc.call_senior(number, message)
     logger.info("call_senior result: %s", result.get("status"))
     return result
 
@@ -49,10 +59,15 @@ def alert_family_sms(message: str, family_number: str) -> dict:
     Returns:
         dict with message_sid, status, and to number.
     """
+    number = family_number or _DEFAULT_FAMILY_NUMBER
+    if not number:
+        logger.warning("alert_family_sms: no family number provided and FAMILY_PHONE_NUMBER not set")
+        return {"message_sid": None, "status": "skipped", "reason": "no_family_number"}
+
     from services.twilio_service import TwilioService
 
     svc = TwilioService()
-    result = svc.alert_family(message, family_number)
+    result = svc.alert_family(message, number)
     logger.info("alert_family_sms result: %s", result.get("status"))
     return result
 
@@ -69,12 +84,18 @@ def emergency_escalation(senior_number: str, family_number: str, reason: str) ->
     Returns:
         dict with call result and sms result.
     """
+    senior = senior_number or _DEFAULT_SENIOR_NUMBER
+    family = family_number or _DEFAULT_FAMILY_NUMBER
+    if not senior and not family:
+        logger.warning("emergency_escalation: no phone numbers available")
+        return {"call": {"status": "skipped"}, "sms": {"status": "skipped"}, "reason": "no_phone_numbers"}
+
     from services.twilio_service import TwilioService
 
     svc = TwilioService()
     result = svc.emergency_escalation(
-        senior_number=senior_number,
-        family_number=family_number,
+        senior_number=senior,
+        family_number=family,
         reason=reason,
     )
     logger.info("emergency_escalation result: call=%s sms=%s",

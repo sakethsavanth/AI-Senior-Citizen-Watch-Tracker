@@ -42,7 +42,7 @@ from railtracks_agents.tools.health_records_tools import (
 
 
 AGENT_TOOLS = {
-    "vital_sync": [assess_vitals, assess_hrv, assess_fall, assess_sleep, assess_activity],
+    "vital_sync": [assess_vitals, assess_hrv, assess_fall, assess_sleep, assess_activity, emergency_escalation],
     "activity": [assess_activity, assess_fall],
     "sleep": [assess_sleep, assess_vitals],
     "medicine": [assess_medication, get_current_med_window, request_pharmacy_refill],
