@@ -1,1 +1,0 @@
-# SeniorCare AI – Lambdas package

@@ -5,31 +5,8 @@
   "headers": {
     "Content-Type": "application/json",
     "Accept": "application/json",
-    "User-Agent": "SeniorCare-Android/1.0"
+    "User-Agent": "ElderHarmony-Wearable/1.0"
   },
-  "queryStringParameters": null,
-  "pathParameters": null,
-  "stageVariables": null,
-  "requestContext": {
-    "resourceId": "abc123",
-    "resourcePath": "/health-data",
-    "httpMethod": "POST",
-    "extendedRequestId": "EXAMPLE-ID",
-    "requestTime": "14/Mar/2026:10:00:00 +0000",
-    "path": "/prod/health-data",
-    "accountId": "123456789012",
-    "protocol": "HTTP/1.1",
-    "stage": "prod",
-    "domainPrefix": "seniorcare-api",
-    "requestTimeEpoch": 1773673200000,
-    "requestId": "request-id-example",
-    "identity": {
-      "sourceIp": "192.168.1.1",
-      "userAgent": "SeniorCare-Android/1.0"
-    },
-    "domainName": "seniorcare-api.execute-api.us-east-1.amazonaws.com",
-    "apiId": "api-id-example"
-  },
-  "body": "{\"user_id\": \"senior_001\", \"heart_rate\": 78, \"spo2\": 96, \"steps\": 4200, \"sleep_hours\": 5.0, \"pill_count\": 2, \"last_movement_minutes\": 300, \"medication_name\": \"Blood Pressure\", \"emergency_contact\": \"+1234567890\"}",
+  "body": "{\"user_id\": \"senior_001\", \"heart_rate\": 72, \"spo2\": 97, \"steps\": 4200, \"sleep_hours\": 6.5, \"pill_count\": 10, \"last_movement_minutes\": 45, \"medication_name\": \"Lipitor\", \"emergency_contact\": \"+1234567890\", \"hrv_percent\": 68, \"mood_score\": 4.0, \"family_contacts\": [{\"name\": \"Sarah\", \"phone\": \"+1987654321\", \"last_contact_iso\": \"2026-03-12T14:00:00Z\"}, {\"name\": \"Raj\", \"phone\": \"+1555123456\", \"last_contact_iso\": \"2026-03-10T09:00:00Z\"}]}",
   "isBase64Encoded": false
 }

@@ -1,0 +1,20 @@
+{
+  "scenario_id": "fall_detected",
+  "description": "Fall detected by device. Triggers emergency escalation (call senior + SMS family).",
+  "trigger_type": "threshold",
+  "health_data": {
+    "heart_rate": 95,
+    "spo2": 94,
+    "steps": 450,
+    "sleep_hours": 6.0,
+    "pill_count": 8,
+    "last_movement_minutes": 5,
+    "hrv_percent": 55,
+    "heart_rate_avg_24h": 78,
+    "spo2_avg_24h": 96,
+    "fall_detected": true,
+    "mood_score": null,
+    "medication_taken_today": { "morning": true, "afternoon": true, "evening": false, "night": false },
+    "doses_missed_consecutive_days": 0
+  }
+}

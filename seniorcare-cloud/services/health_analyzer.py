@@ -1,13 +1,8 @@
 """
-SeniorCare AI – Health Analyzer
-=================================
-Pure-logic health analysis utilities.  Provides deterministic rule-based
-assessments that complement the AI-based Bedrock analysis.
-
-Usage
------
-    from services.health_analyzer import HealthAnalyzer
-    report = HealthAnalyzer.full_assessment(payload)
+ElderHarmony – Health Analyzer
+===============================
+Deterministic rule-based assessments: vitals (24hr), sleep, activity,
+HRV, fall, medication. Complements OpenRouter AI analysis.
 """
 
 from __future__ import annotations
@@ -23,36 +18,67 @@ from models.health_payload import (
     HEART_RATE_LOW,
     HEART_RATE_HIGH,
     SPO2_LOW_THRESHOLD,
+    HRV_LOW_PERCENT,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class HealthAnalyzer:
-    """Stateless, deterministic health-risk engine."""
+    """Stateless, deterministic health-risk engine. Vitals = 24hr period."""
 
     # ──────────────────────────────────────────────
-    # Individual assessments
+    # Individual assessments (24hr vitals where applicable)
     # ──────────────────────────────────────────────
     @staticmethod
     def assess_vitals(health: HealthPayload) -> Dict[str, Any]:
-        """Check heart rate and SpO2 against clinical thresholds."""
+        """Check heart rate and SpO2 (24hr) against clinical thresholds."""
         issues: List[str] = []
+        hr = health.heart_rate_24h
+        spo2 = health.spo2_24h
 
-        if health.heart_rate < HEART_RATE_LOW:
-            issues.append(f"Bradycardia: HR={health.heart_rate} bpm (< {HEART_RATE_LOW})")
-        elif health.heart_rate > HEART_RATE_HIGH:
-            issues.append(f"Tachycardia: HR={health.heart_rate} bpm (> {HEART_RATE_HIGH})")
+        if hr < HEART_RATE_LOW:
+            issues.append(f"Bradycardia: HR={hr} bpm (< {HEART_RATE_LOW})")
+        elif hr > HEART_RATE_HIGH:
+            issues.append(f"Tachycardia: HR={hr} bpm (> {HEART_RATE_HIGH})")
 
-        if health.spo2 < SPO2_LOW_THRESHOLD:
-            issues.append(f"Hypoxemia: SpO2={health.spo2}% (< {SPO2_LOW_THRESHOLD}%)")
+        if spo2 < SPO2_LOW_THRESHOLD:
+            issues.append(f"Hypoxemia: SpO2={spo2}% (< {SPO2_LOW_THRESHOLD}%)")
 
         return {
             "category": "vitals",
-            "heart_rate": health.heart_rate,
-            "spo2": health.spo2,
+            "heart_rate": hr,
+            "spo2": spo2,
+            "period": "24h",
             "status": "critical" if issues else "normal",
             "issues": issues,
+        }
+
+    @staticmethod
+    def assess_hrv(health: HealthPayload) -> Dict[str, Any]:
+        """HRV as % of normal. < 40% → possible infection / doctor visit."""
+        hrv = health.hrv_percent
+        if hrv is None:
+            return {
+                "category": "hrv",
+                "hrv_percent": None,
+                "status": "unknown",
+                "below_threshold": False,
+            }
+        return {
+            "category": "hrv",
+            "hrv_percent": hrv,
+            "status": "low" if health.is_hrv_low else "normal",
+            "below_threshold": health.is_hrv_low,
+        }
+
+    @staticmethod
+    def assess_fall(health: HealthPayload) -> Dict[str, Any]:
+        """Fall detection → emergency."""
+        return {
+            "category": "fall",
+            "fall_detected": health.fall_detected,
+            "status": "critical" if health.fall_detected else "normal",
         }
 
     @staticmethod
@@ -92,7 +118,7 @@ class HealthAnalyzer:
 
     @staticmethod
     def assess_medication(health: HealthPayload) -> Dict[str, Any]:
-        """Evaluate medication inventory."""
+        """Evaluate medication inventory and 3-day miss → refill."""
         if health.pill_count == 0:
             status = "depleted"
         elif health.pill_count < PILL_LOW_THRESHOLD:
@@ -106,6 +132,20 @@ class HealthAnalyzer:
             "medication_name": health.medication_name,
             "status": status,
             "refill_needed": health.is_pill_low,
+            "refill_3day_miss": health.needs_refill_3day_miss,
+        }
+
+    @staticmethod
+    def assess_mood(health: HealthPayload) -> Dict[str, Any]:
+        """EmoCare: mood 1–5. < 3 → trigger call."""
+        score = health.mood_score
+        if score is None:
+            return {"category": "mood", "mood_score": None, "status": "unknown", "low_mood": False}
+        return {
+            "category": "mood",
+            "mood_score": score,
+            "status": "low" if health.is_mood_low else "ok",
+            "low_mood": health.is_mood_low,
         }
 
     # ──────────────────────────────────────────────
@@ -114,28 +154,31 @@ class HealthAnalyzer:
     @classmethod
     def full_assessment(cls, health: HealthPayload) -> Dict[str, Any]:
         """
-        Run all individual assessments and compute an aggregate risk level.
-
-        Returns
-        -------
-        dict with keys: overall_risk, assessments (list), critical_flags (list)
+        Run all assessments. Vitals = 24hr period. Includes HRV, fall, mood.
         """
         assessments = [
             cls.assess_vitals(health),
+            cls.assess_hrv(health),
+            cls.assess_fall(health),
             cls.assess_sleep(health),
             cls.assess_activity(health),
             cls.assess_medication(health),
+            cls.assess_mood(health),
         ]
 
         critical_flags = []
         for a in assessments:
-            if a.get("status") in ("critical", "poor", "depleted"):
+            if a.get("category") == "mood" and a.get("low_mood"):
+                critical_flags.append("mood")
+            elif a.get("status") in ("critical", "poor", "depleted"):
                 critical_flags.append(a["category"])
             if a.get("issues"):
                 critical_flags.extend(a["issues"])
 
-        # Determine overall risk
-        if len(critical_flags) >= 2:
+        if health.fall_detected:
+            critical_flags.append("fall")
+
+        if len(critical_flags) >= 2 or health.fall_detected:
             overall_risk = "high"
         elif len(critical_flags) == 1:
             overall_risk = "medium"

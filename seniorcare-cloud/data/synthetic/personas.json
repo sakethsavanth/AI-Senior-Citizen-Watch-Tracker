@@ -1,0 +1,40 @@
+{
+  "description": "Synthetic elderly personas for testing and demos. Each has a stable profile; scenarios define health payloads.",
+  "personas": [
+    {
+      "user_id": "senior_001",
+      "name": "Margaret Sharma",
+      "age": 72,
+      "medication_name": "Blood Pressure",
+      "emergency_contact": "+14165551234",
+      "family_contacts": [
+        { "name": "Sarah", "phone": "+14165559876", "last_contact_iso": "2026-03-12T14:00:00Z" },
+        { "name": "Raj", "phone": "+14165554321", "last_contact_iso": "2026-03-10T09:00:00Z" }
+      ],
+      "timezone": "America/Toronto"
+    },
+    {
+      "user_id": "senior_002",
+      "name": "James Chen",
+      "age": 78,
+      "medication_name": "Lisinopril",
+      "emergency_contact": "+14165550001",
+      "family_contacts": [
+        { "name": "Emily", "phone": "+14165550002", "last_contact_iso": "2026-03-14T08:00:00Z" }
+      ],
+      "timezone": "America/Toronto"
+    },
+    {
+      "user_id": "senior_003",
+      "name": "Rosa Martinez",
+      "age": 69,
+      "medication_name": "Metformin",
+      "emergency_contact": "+14165557777",
+      "family_contacts": [
+        { "name": "Maria", "phone": "+14165557778", "last_contact_iso": "2026-03-11T18:00:00Z" },
+        { "name": "Carlos", "phone": "+14165557779", "last_contact_iso": "2026-03-09T12:00:00Z" }
+      ],
+      "timezone": "America/Toronto"
+    }
+  ]
+}
