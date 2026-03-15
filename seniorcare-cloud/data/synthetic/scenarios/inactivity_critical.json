@@ -1,0 +1,20 @@
+{
+  "scenario_id": "inactivity_critical",
+  "description": "No movement >6h (welfare check). Activity + Calling.",
+  "trigger_type": "threshold",
+  "health_data": {
+    "heart_rate": 70,
+    "spo2": 97,
+    "steps": 180,
+    "sleep_hours": 7.0,
+    "pill_count": 9,
+    "last_movement_minutes": 400,
+    "hrv_percent": 58,
+    "heart_rate_avg_24h": 72,
+    "spo2_avg_24h": 97,
+    "fall_detected": false,
+    "mood_score": null,
+    "medication_taken_today": { "morning": true, "afternoon": false, "evening": false, "night": false },
+    "doses_missed_consecutive_days": 0
+  }
+}

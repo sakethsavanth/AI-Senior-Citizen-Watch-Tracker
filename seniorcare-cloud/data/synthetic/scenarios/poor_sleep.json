@@ -1,0 +1,20 @@
+{
+  "scenario_id": "poor_sleep",
+  "description": "Poor sleep (<4h). Sleep agent + alert_family.",
+  "trigger_type": "scheduled",
+  "health_data": {
+    "heart_rate": 82,
+    "spo2": 95,
+    "steps": 1500,
+    "sleep_hours": 3.5,
+    "pill_count": 7,
+    "last_movement_minutes": 90,
+    "hrv_percent": 38,
+    "heart_rate_avg_24h": 80,
+    "spo2_avg_24h": 95,
+    "fall_detected": false,
+    "mood_score": 3.0,
+    "medication_taken_today": { "morning": true, "afternoon": false, "evening": false, "night": false },
+    "doses_missed_consecutive_days": 0
+  }
+}

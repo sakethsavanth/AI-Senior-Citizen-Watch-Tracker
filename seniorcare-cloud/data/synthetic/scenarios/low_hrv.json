@@ -1,0 +1,20 @@
+{
+  "scenario_id": "low_hrv",
+  "description": "HRV <40% (recovery 35%). VitalSync doctor-visit nudge, possible Calling.",
+  "trigger_type": "scheduled",
+  "health_data": {
+    "heart_rate": 76,
+    "spo2": 96,
+    "steps": 2200,
+    "sleep_hours": 5.8,
+    "pill_count": 11,
+    "last_movement_minutes": 60,
+    "hrv_percent": 35,
+    "heart_rate_avg_24h": 78,
+    "spo2_avg_24h": 96,
+    "fall_detected": false,
+    "mood_score": 4.0,
+    "medication_taken_today": { "morning": true, "afternoon": true, "evening": false, "night": false },
+    "doses_missed_consecutive_days": 0
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "scenario_id": "refill_needed",
+  "description": "Low pill count + 3-day miss pattern. Refill agent should request pharmacy refill.",
+  "trigger_type": "scheduled",
+  "health_data": {
+    "heart_rate": 74,
+    "spo2": 96,
+    "steps": 2100,
+    "sleep_hours": 6.8,
+    "pill_count": 2,
+    "last_movement_minutes": 45,
+    "hrv_percent": 62,
+    "heart_rate_avg_24h": 73,
+    "spo2_avg_24h": 96,
+    "fall_detected": false,
+    "mood_score": 3.5,
+    "medication_taken_today": { "morning": true, "afternoon": true, "evening": false, "night": false },
+    "doses_missed_consecutive_days": 3
+  }
+}
