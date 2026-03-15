@@ -23,7 +23,7 @@
 ## How triggering works (no cron)
 
 1. **Entry:** Wearable/app **POST /health-data** → API Gateway → **Orchestrator**.
-2. Orchestrator parses payload (24hr vitals), runs **HealthAnalyzer** + **Bedrock**, then **event_router** decides which agents to invoke.
+2. Orchestrator parses payload (24hr vitals), runs **HealthAnalyzer** + **OpenRouter**, then **event_router** decides which agents to invoke.
 3. Each selected agent Lambda is invoked **asynchronously** (`InvocationType="Event"`). No scheduled cron; everything is event-driven per request.
 
 Medication windows (8/12/18/21) are evaluated **when a payload is received** (e.g. wearable sends data hourly); for fixed-time reminders you’d add EventBridge rules (see below).
@@ -53,7 +53,7 @@ When `*_avg_24h` or `hrv_percent` are present, routing and alerts use these for 
 ## Env vars (Orchestrator)
 
 - `VITAL_SYNC_AGENT_ARN`, `MEDICINE_AGENT_ARN`, `EMO_CARE_AGENT_ARN`, `CALLING_AGENT_ARN`, `HEALTH_RECORDS_AGENT_ARN`
-- `AWS_REGION`, Bedrock/Twilio/Pharmacy as needed per agent
+- `AWS_REGION`, OpenRouter/Twilio/Pharmacy as needed per agent
 
 ---
 

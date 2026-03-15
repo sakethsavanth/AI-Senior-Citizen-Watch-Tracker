@@ -107,7 +107,7 @@ DAILY FLOW:
 ```
 Frontend: Next.js + Tailwind (child dashboard + senior voice UI)
 Backend: FastAPI + LangGraph orchestrator
-AI: Bedrock Claude 3.5 (multi-agent reasoning)
+AI: OpenRouter Claude Sonnet 4.5 (multi-agent reasoning)
 Data: DynamoDB (state) + S3 (Whoop CSV)
 Actions: Twilio API + mock pharmacy/doctor APIs
 Deploy: AWS Fargate + CloudWatch monitoring
@@ -115,7 +115,7 @@ Deploy: AWS Fargate + CloudWatch monitoring
 
 ## Judging Criteria Lock
 - **Innovation**: True multi-agent orchestration + learning
-- **Technical**: LangGraph + Bedrock + production AWS
+- **Technical**: LangGraph + OpenRouter + production AWS
 - **Design**: Dual UI (simple senior voice + rich child dashboard)  
 - **Impact**: "$4.7k ER savings + 92% med adherence"
 

@@ -2,7 +2,7 @@
 ElderHarmony – Health Analyzer
 ===============================
 Deterministic rule-based assessments: vitals (24hr), sleep, activity,
-HRV, fall, medication. Complements Bedrock AI analysis.
+HRV, fall, medication. Complements OpenRouter AI analysis.
 """
 
 from __future__ import annotations

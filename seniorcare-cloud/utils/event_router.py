@@ -43,7 +43,7 @@ class RoutingDecision:
 
 def determine_routes(
     health: HealthPayload,
-    bedrock_analysis: Dict[str, Any] | None = None,
+    llm_analysis: Dict[str, Any] | None = None,
 ) -> List[RoutingDecision]:
     """
     Route to ElderHarmony agents. Vitals = 24hr period.
@@ -110,11 +110,11 @@ def determine_routes(
         call_reason = f"Vital anomaly: HR={health.heart_rate_24h}, SpO2={health.spo2_24h}"
         call_payload["risk_level"] = "medium"
         call_payload["recommended_action"] = "alert"
-    elif bedrock_analysis:
-        risk = bedrock_analysis.get("risk_level", "low")
-        action = bedrock_analysis.get("recommended_action", "monitor")
+    elif llm_analysis:
+        risk = llm_analysis.get("risk_level", "low")
+        action = llm_analysis.get("recommended_action", "monitor")
         if risk == "high" or action in ("call", "alert"):
-            call_reason = f"Bedrock AI: risk={risk}, action={action}"
+            call_reason = f"OpenRouter AI: risk={risk}, action={action}"
             call_payload["risk_level"] = risk
             call_payload["recommended_action"] = action
     elif health.is_mood_low:

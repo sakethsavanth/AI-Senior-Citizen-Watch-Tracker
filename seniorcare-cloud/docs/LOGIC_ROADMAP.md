@@ -8,15 +8,15 @@
 
 ## 1. Event router integration (deterministic pre-triage)
 
-**Current state:** `utils/event_router.py` has full routing logic (`determine_routes(health, bedrock_analysis)`) but **it is never called** in the Railtracks flow. The orchestrator comment says routing is "encoded in the system prompt" — so only the LLM decides.
+**Current state:** `utils/event_router.py` has full routing logic (`determine_routes(health, llm_analysis)`) but **it is never called** in the Railtracks flow. The orchestrator comment says routing is "encoded in the system prompt" — so only the LLM decides.
 
 **Logic to add:**
 
-- **Option A — Hybrid:** In `lambda_handler.py`, call `determine_routes(health)` (and optionally `HealthAnalyzer.full_assessment(health)` or Bedrock) **before** invoking the Orchestrator. Pass the result as structured context, e.g. `suggested_routes: [agent names]` and `overall_risk`, so the LLM can follow or override.
+- **Option A — Hybrid:** In `lambda_handler.py`, call `determine_routes(health)` (and optionally `HealthAnalyzer.full_assessment(health)` or OpenRouter) **before** invoking the Orchestrator. Pass the result as structured context, e.g. `suggested_routes: [agent names]` and `overall_risk`, so the LLM can follow or override.
 - **Option B — Enforce routes:** Use `determine_routes()` to decide which agents **must** run; invoke only those agent nodes (or a sub-flow) instead of giving the LLM full freedom. Reduces cost and keeps behavior aligned with clinical rules.
 - **Option C — Fallback:** If the LLM returns no agents or errors, fall back to `determine_routes(health)` and invoke those agents explicitly.
 
-**Files to touch:** `railtracks_agents/lambda_handler.py`, optionally `utils/event_router.py` (extend with `bedrock_analysis` from a Bedrock call if you add it).
+**Files to touch:** `railtracks_agents/lambda_handler.py`, optionally `utils/event_router.py` (extend with `llm_analysis` from an OpenRouter call if you add it).
 
 ---
 

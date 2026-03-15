@@ -5,8 +5,8 @@ Provides a single Claude invocation interface via OpenRouter.
 
 Usage
 -----
-    from services.bedrock_client import BedrockClient
-    client = BedrockClient()
+    from services.openrouter_client import OpenRouterClient
+    client = OpenRouterClient()
     result = client.analyze_health(payload.to_dict())
 """
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # ── Configuration ──────────────────────────────
 OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1/chat/completions")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
-MAX_TOKENS = int(os.getenv("OPENROUTER_MAX_TOKENS", os.getenv("BEDROCK_MAX_TOKENS", "1024")))
+MAX_TOKENS = int(os.getenv("OPENROUTER_MAX_TOKENS", "1024"))
 OPENROUTER_REFERER = os.getenv("OPENROUTER_REFERER", "")
 OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "SeniorCare AI")
 
@@ -209,7 +209,3 @@ class OpenRouterClient:
         except json.JSONDecodeError:
             logger.warning("JSON parse failed; wrapping raw text.")
             return {"raw_response": raw[:500]}
-
-
-class BedrockClient(OpenRouterClient):
-    """Backwards-compatible alias for legacy imports."""

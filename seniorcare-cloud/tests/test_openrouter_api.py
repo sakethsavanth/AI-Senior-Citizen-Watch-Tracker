@@ -23,7 +23,7 @@ sys.path.insert(0, PROJECT_ROOT)
 
 from dotenv import load_dotenv
 
-from services.bedrock_client import OpenRouterClient
+from services.openrouter_client import OpenRouterClient
 
 
 def parse_args() -> argparse.Namespace:

@@ -21,14 +21,14 @@ POST /health-data → API Gateway → Orchestrator
 
 ### Two Backend Implementations
 
-**1. Lambda-based (`lambdas/`)** – Original architecture. Orchestrator uses `HealthAnalyzer` (deterministic) + `BedrockClient` (Claude on Bedrock) → `event_router.determine_routes()` → async Lambda invocations. Each agent is a separate Lambda with `lambda_handler(event, context)`.
+**1. Lambda-based (`lambdas/`)** – Original architecture. Orchestrator uses `HealthAnalyzer` (deterministic) + `OpenRouterClient` (Claude via OpenRouter) → `event_router.determine_routes()` → async Lambda invocations. Each agent is a separate Lambda with `lambda_handler(event, context)`.
 
 **2. Railtracks agentic (`railtracks_agents/`)** – Newer implementation using the `railtracks` SDK. Uses **agents-as-tools** pattern: the Orchestrator is an `rt.agent_node` with 9 sub-agents + a `full_health_assessment` triage tool as `tool_nodes`. The LLM (GPT-OSS 120B via HuggingFace endpoint) decides which agents to invoke based on its system prompt. Entry point: `railtracks_agents/lambda_handler.py`.
 
 ### Shared Modules (used by both implementations)
 
 - **`models/health_payload.py`** – `HealthPayload` dataclass with clinical thresholds and risk-flag properties. The data contract for all agents.
-- **`services/bedrock_client.py`** – `BedrockClient` wraps boto3 bedrock-runtime with domain-specific helpers (`analyze_health`, `analyze_vitals_24h`, `analyze_mood`, etc.).
+- **`services/openrouter_client.py`** – `OpenRouterClient` wraps OpenRouter chat-completions with domain-specific helpers (`analyze_health`, `analyze_vitals_24h`, `analyze_mood`, etc.).
 - **`services/twilio_service.py`** – `TwilioService` for voice calls and SMS. Simulates when credentials are missing.
 - **`services/pharmacy_api.py`** – `PharmacyAPI` for medication refills. Simulates when unreachable.
 - **`services/health_analyzer.py`** – `HealthAnalyzer` with deterministic assessments (vitals, HRV, fall, sleep, activity, medication, mood).
@@ -60,7 +60,7 @@ POST /health-data → API Gateway → Orchestrator
 cd seniorcare-cloud
 pip install -r requirements.txt
 
-# Run Lambda-based local tests (orchestrator + agents via Bedrock)
+# Run Lambda-based local tests (orchestrator + agents via OpenRouter)
 cd seniorcare-cloud
 python tests/test_local.py
 
@@ -76,7 +76,7 @@ python whoopTester.py
 ## Environment Variables
 
 Required in `.env` (at `seniorcare-cloud/.env`):
-- **AWS/Bedrock:** `AWS_REGION`, `BEDROCK_MODEL_ID`, agent ARNs (`VITAL_SYNC_AGENT_ARN`, etc.)
+- **AWS/OpenRouter:** `AWS_REGION`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, agent ARNs (`VITAL_SYNC_AGENT_ARN`, etc.)
 - **Railtracks:** `OPENAI_API_KEY` (for GPT-OSS endpoint)
 - **Twilio:** `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `FAMILY_PHONE_NUMBER`
 - **Pharmacy:** `PHARMACY_API_URL`, `PHARMACY_API_KEY`, `DEFAULT_REFILL_QTY`
