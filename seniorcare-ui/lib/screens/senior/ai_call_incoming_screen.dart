@@ -32,7 +32,7 @@ class AICallIncomingScreen extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Text(
-                '"${callData['question'] ?? 'Good morning Mr. Sharma! Did you take your Lisinopril today?'}"',
+                '"${callData['question'] ?? 'Good morning! Did you take your medication today?'}"',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
               ),

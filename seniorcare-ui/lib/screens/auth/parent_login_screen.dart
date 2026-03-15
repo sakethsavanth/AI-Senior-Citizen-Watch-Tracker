@@ -140,7 +140,11 @@ class _ParentLoginScreenState extends ConsumerState<ParentLoginScreen> {
               // Face ID link
               Center(
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Face ID not available in demo')),
+                    );
+                  },
                   child: Text(
                     'Use Face ID instead',
                     style: TextStyle(

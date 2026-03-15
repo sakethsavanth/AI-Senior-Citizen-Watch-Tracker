@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/scenario_provider.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
 import '../../widgets/badge_widget.dart';
 
-class CallHistoryScreen extends StatelessWidget {
+class CallHistoryScreen extends ConsumerWidget {
   const CallHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final h = ref.watch(scenarioHealthDataProvider);
+    final agentResults = ref.watch(agentResultsProvider);
+    final seniorName = h['persona_name'] as String? ?? 'Senior';
+    final calls = ApiService.getCallHistoryFromAgentResults(agentResults, seniorName);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Call History'),
@@ -19,86 +26,35 @@ class CallHistoryScreen extends StatelessWidget {
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(24),
-        itemCount: mockCallHistory.length,
+        itemCount: calls.length,
         separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (context, index) {
-          final call = mockCallHistory[index];
+          final call = calls[index];
           final isConfirmed = call['outcome'] == 'Confirmed';
 
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Row(
               children: [
-                // AI avatar
                 Container(
-                  width: 28,
-                  height: 28,
+                  width: 28, height: 28,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.aiActionBg,
-                    border:
-                        Border.all(color: AppColors.brandPrimary, width: 1),
+                    border: Border.all(color: AppColors.brandPrimary, width: 1),
                   ),
-                  child: Center(
-                    child: Text(
-                      'AI',
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.brandPrimary,
-                      ),
-                    ),
-                  ),
+                  child: Center(child: Text('AI', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.brandPrimary))),
                 ),
                 const SizedBox(width: 12),
-
-                // Time
-                SizedBox(
-                  width: 110,
-                  child: Text(
-                    call['time']!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-
-                // Target
-                SizedBox(
-                  width: 100,
-                  child: Text(
-                    call['target']!,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-
-                // Reason
-                Expanded(
-                  child: Text(
-                    call['reason']!,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                  ),
-                ),
-
-                // Duration
-                SizedBox(
-                  width: 50,
-                  child: Text(
-                    call['duration']!,
-                    style: const TextStyle(fontSize: 11),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                SizedBox(width: 110, child: Text(call['time']!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500))),
+                SizedBox(width: 100, child: Text(call['target']!, style: const TextStyle(fontSize: 11))),
+                Expanded(child: Text(call['reason']!, style: TextStyle(fontSize: 11, color: Colors.grey[600]))),
+                SizedBox(width: 50, child: Text(call['duration']!, style: const TextStyle(fontSize: 11), textAlign: TextAlign.center)),
                 const SizedBox(width: 8),
-
-                // Outcome badge
                 StatusBadge(
                   label: call['outcome']!,
                   bgColor: isConfirmed ? AppColors.okBg : AppColors.aiActionBg,
-                  textColor: isConfirmed
-                      ? AppColors.okText
-                      : AppColors.aiActionText,
+                  textColor: isConfirmed ? AppColors.okText : AppColors.aiActionText,
                 ),
               ],
             ),

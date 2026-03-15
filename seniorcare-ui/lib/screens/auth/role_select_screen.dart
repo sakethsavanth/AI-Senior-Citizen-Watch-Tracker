@@ -68,7 +68,7 @@ class RoleSelectScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               TextButton(
-                onPressed: () {},
+                onPressed: () => context.go('/auth/parent-login'),
                 child: Text(
                   'Already have an account? Sign in',
                   style: TextStyle(fontSize: 11, color: AppColors.brandPrimary),

@@ -11,12 +11,16 @@ import 'screens/senior/ai_call_incoming_screen.dart';
 import 'screens/senior/ai_call_active_screen.dart';
 import 'screens/senior/dose_history_screen.dart';
 import 'screens/senior/emergency_screen.dart';
+import 'screens/senior/mood_input_screen.dart';
+import 'screens/senior/family_contacts_screen.dart';
 import 'screens/family/family_dashboard_screen.dart';
 import 'screens/family/family_alerts_screen.dart';
 import 'screens/family/weekly_report_screen.dart';
+import 'screens/family/health_records_screen.dart';
 import 'screens/web/web_dashboard_screen.dart';
 import 'screens/web/dosage_log_screen.dart';
 import 'screens/web/call_history_screen.dart';
+import 'screens/web/agent_results_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.read(authProvider);
@@ -38,7 +42,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Role-based routing guard
-      if (user.role == 'parent' && !path.startsWith('/senior')) {
+      if (user.role == 'parent' && !path.startsWith('/senior') && !path.startsWith('/dashboard')) {
         return '/senior/home';
       }
       if (user.role == 'child' &&
@@ -91,6 +95,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const EmergencyScreen(),
       ),
       GoRoute(
+        path: '/senior/mood',
+        builder: (_, __) => const MoodInputScreen(),
+      ),
+      GoRoute(
+        path: '/senior/family-contacts',
+        builder: (_, __) => const FamilyContactsScreen(),
+      ),
+      GoRoute(
         path: '/family/home',
         builder: (_, __) => const FamilyDashboardScreen(),
       ),
@@ -103,6 +115,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const WeeklyReportScreen(),
       ),
       GoRoute(
+        path: '/family/health-records',
+        builder: (_, __) => const HealthRecordsScreen(),
+      ),
+      GoRoute(
         path: '/dashboard',
         builder: (_, __) => const WebDashboardScreen(),
       ),
@@ -113,6 +129,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard/call-history',
         builder: (_, __) => const CallHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/dashboard/agent-results',
+        builder: (_, __) => const AgentResultsScreen(),
       ),
     ],
   );

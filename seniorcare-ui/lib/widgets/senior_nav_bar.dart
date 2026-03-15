@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../widgets/scenario_picker.dart';
 
 class SeniorNavBar extends StatelessWidget {
   final int currentIndex;
@@ -21,11 +22,9 @@ class SeniorNavBar extends StatelessWidget {
           case 1:
             context.go('/senior/medications');
           case 2:
-            // Family tab — placeholder
-            break;
+            context.go('/senior/family-contacts');
           case 3:
-            // Settings — placeholder
-            break;
+            ScenarioPicker.show(context);
         }
       },
       items: const [

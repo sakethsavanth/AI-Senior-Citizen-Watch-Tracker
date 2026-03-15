@@ -1,14 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/scenario_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../mock_data.dart';
 import '../../widgets/family_nav_bar.dart';
 
-class WeeklyReportScreen extends StatelessWidget {
+class WeeklyReportScreen extends ConsumerWidget {
   const WeeklyReportScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final h = ref.watch(scenarioHealthDataProvider);
+    final triage = ref.watch(triageResultProvider);
+    final days = ref.watch(decliningWeekDaysProvider);
+
+    final hr = (h['heart_rate'] as num?)?.toInt() ?? 72;
+    final sleepH = (h['sleep_hours'] as num?)?.toDouble() ?? 7.0;
+    final steps = (h['steps'] as num?)?.toInt() ?? 3000;
+
+    // If declining_week, use the real 7-day data; otherwise synthesize from today
+    final weekSteps = days.isNotEmpty
+        ? days.map((d) => ((d['steps'] as num?)?.toDouble() ?? 0)).toList()
+        : List.generate(7, (i) => steps.toDouble() + (i - 3) * 200);
+
+    final maxY = (weekSteps.reduce((a, b) => a > b ? a : b) * 1.2).clamp(1000.0, 20000.0);
+    final avgSteps = weekSteps.isNotEmpty
+        ? (weekSteps.reduce((a, b) => a + b) / weekSteps.length).round()
+        : steps;
+    final avgStepsLabel = avgSteps >= 1000 ? '${(avgSteps / 1000).toStringAsFixed(1)}k' : '$avgSteps';
+
+    final risk = triage['overall_risk'] as String? ?? 'low';
+    final summary = risk == 'high'
+        ? 'Critical week. Multiple health flags detected. Immediate attention recommended.'
+        : risk == 'medium'
+            ? 'Some concerns this week. Monitor vitals closely.'
+            : 'Stable week. All vitals within normal ranges.';
+
     return Scaffold(
       bottomNavigationBar: const FamilyNavBar(currentIndex: 1),
       body: SafeArea(
@@ -18,7 +45,7 @@ class WeeklyReportScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Weekly Report', style: AppTextStyles.title),
-              Text('Mar 7 \u2013 Mar 14, 2026', style: AppTextStyles.micro),
+              Text('Current scenario week', style: AppTextStyles.micro),
               const SizedBox(height: 12),
 
               // 2x2 metric grid
@@ -30,11 +57,10 @@ class WeeklyReportScreen extends StatelessWidget {
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
                 children: [
-                  _MetricTile('Avg HR', '$weeklyAvgHR', 'bpm', null),
-                  _MetricTile(
-                      'Adherence', '$weeklyAdherence%', '', AppColors.okText),
-                  _MetricTile('Avg Sleep', '$weeklyAvgSleep', 'h', null),
-                  _MetricTile('Avg Steps', weeklyAvgSteps, '', null),
+                  _MetricTile('Avg HR', '$hr', 'bpm', null),
+                  _MetricTile('Adherence', '${h['medication_taken_today'] != null ? '95' : '--'}%', '', AppColors.okText),
+                  _MetricTile('Avg Sleep', sleepH.toStringAsFixed(1), 'h', null),
+                  _MetricTile('Avg Steps', avgStepsLabel, '', null),
                 ],
               ),
               const SizedBox(height: 12),
@@ -43,40 +69,27 @@ class WeeklyReportScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.aiActionBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                decoration: BoxDecoration(color: AppColors.aiActionBg, borderRadius: BorderRadius.circular(8)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'AI Summary',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.aiActionText,
-                      ),
-                    ),
+                    Text('AI Summary', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.aiActionText)),
                     const SizedBox(height: 4),
-                    const Text(weeklyAISummary, style: TextStyle(fontSize: 12)),
+                    Text(summary, style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
 
               // Steps chart
-              Text(
-                'Steps this week',
-                style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w600),
-              ),
+              Text('Steps this week', style: AppTextStyles.label.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               SizedBox(
                 height: 160,
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: 5000,
+                    maxY: maxY,
                     barTouchData: BarTouchData(enabled: false),
                     titlesData: FlTitlesData(
                       show: true,
@@ -84,42 +97,30 @@ class WeeklyReportScreen extends StatelessWidget {
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
-                            const days = [
-                              'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
-                            ];
-                            return Text(
-                              days[value.toInt()],
-                              style: const TextStyle(fontSize: 8),
-                            );
+                            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                            if (value.toInt() >= 0 && value.toInt() < days.length) {
+                              return Text(days[value.toInt()], style: const TextStyle(fontSize: 8));
+                            }
+                            return const SizedBox.shrink();
                           },
                         ),
                       ),
-                      leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
                     gridData: const FlGridData(show: false),
                     borderData: FlBorderData(show: false),
                     barGroups: List.generate(
-                      7,
+                      weekSteps.length.clamp(0, 7),
                       (i) => BarChartGroupData(
                         x: i,
                         barRods: [
                           BarChartRodData(
-                            toY: weeklySteps[i].toDouble(),
-                            color: i == 3
-                                ? AppColors.brandPrimary
-                                : Colors.grey[300],
+                            toY: weekSteps[i],
+                            color: i == weekSteps.length - 1 ? AppColors.brandPrimary : Colors.grey[300],
                             width: 16,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4),
-                            ),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                           ),
                         ],
                       ),
