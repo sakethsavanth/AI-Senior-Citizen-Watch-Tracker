@@ -172,6 +172,10 @@ class HealthAnalyzer:
                 critical_flags.append("mood")
             elif a.get("status") in ("critical", "poor", "depleted"):
                 critical_flags.append(a["category"])
+            elif a.get("quality") == "poor":
+                critical_flags.append(a["category"])
+            elif a.get("refill_needed") or a.get("refill_3day_miss"):
+                critical_flags.append(a["category"])
             if a.get("issues"):
                 critical_flags.extend(a["issues"])
 

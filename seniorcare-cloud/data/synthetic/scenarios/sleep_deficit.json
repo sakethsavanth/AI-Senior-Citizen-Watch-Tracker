@@ -1,0 +1,28 @@
+{
+  "scenario_id": "sleep_deficit",
+  "description": "Senior with poor sleep (3.5h) and low HRV (35%). Should trigger sleep concern and HRV alert.",
+  "expected_risk": "medium",
+  "expected_agents": ["vital_sync_agent", "medicine_agent", "calling_agent", "health_records_agent"],
+  "expected_emergency": false,
+  "health_data": {
+    "heart_rate": 68,
+    "spo2": 95,
+    "heart_rate_avg_24h": 70,
+    "spo2_avg_24h": 95,
+    "steps": 3200,
+    "sleep_hours": 3.5,
+    "pill_count": 10,
+    "last_movement_minutes": 60,
+    "hrv_percent": 35,
+    "fall_detected": false,
+    "mood_score": 3.5,
+    "medication_name": "Lisinopril",
+    "doses_missed_consecutive_days": 0,
+    "medication_taken_today": {
+      "morning": true,
+      "afternoon": false,
+      "evening": false,
+      "night": false
+    }
+  }
+}

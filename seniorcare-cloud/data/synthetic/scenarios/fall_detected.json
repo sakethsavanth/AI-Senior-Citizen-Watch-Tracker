@@ -2,6 +2,9 @@
   "scenario_id": "fall_detected",
   "description": "Fall detected by device. Triggers emergency escalation (call senior + SMS family).",
   "trigger_type": "threshold",
+  "expected_risk": "high",
+  "expected_agents": ["vital_sync_agent", "medicine_agent", "calling_agent", "health_records_agent"],
+  "expected_emergency": true,
   "health_data": {
     "heart_rate": 95,
     "spo2": 94,

@@ -1,0 +1,26 @@
+{
+  "scenario_id": "low_pills_refill",
+  "description": "Senior with depleted pills (2 remaining) and 3-day consecutive miss. Must trigger auto-refill.",
+  "expected_risk": "medium",
+  "expected_agents": ["vital_sync_agent", "medicine_agent", "health_records_agent"],
+  "expected_emergency": false,
+  "health_data": {
+    "heart_rate": 70,
+    "spo2": 97,
+    "steps": 5000,
+    "sleep_hours": 7.0,
+    "pill_count": 2,
+    "last_movement_minutes": 45,
+    "hrv_percent": 60,
+    "fall_detected": false,
+    "mood_score": 3.8,
+    "medication_name": "Blood Pressure",
+    "doses_missed_consecutive_days": 3,
+    "medication_taken_today": {
+      "morning": false,
+      "afternoon": false,
+      "evening": false,
+      "night": false
+    }
+  }
+}

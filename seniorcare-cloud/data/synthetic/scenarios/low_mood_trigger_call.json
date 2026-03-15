@@ -1,0 +1,30 @@
+{
+  "scenario_id": "low_mood_trigger_call",
+  "description": "Senior with low mood (2.0/5). Should trigger EmoCare + Calling agents.",
+  "expected_risk": "medium",
+  "expected_agents": ["vital_sync_agent", "medicine_agent", "emo_care_agent", "calling_agent", "health_records_agent"],
+  "expected_emergency": false,
+  "health_data": {
+    "heart_rate": 72,
+    "spo2": 96,
+    "steps": 2000,
+    "sleep_hours": 6.0,
+    "pill_count": 12,
+    "last_movement_minutes": 60,
+    "hrv_percent": 55,
+    "fall_detected": false,
+    "mood_score": 2.0,
+    "medication_name": "Blood Pressure",
+    "doses_missed_consecutive_days": 0,
+    "medication_taken_today": {
+      "morning": true,
+      "afternoon": false,
+      "evening": false,
+      "night": false
+    },
+    "family_contacts": [
+      {"name": "Sarah", "phone": "+14165559876", "last_contact_iso": "2026-03-10T10:00:00Z"},
+      {"name": "Raj", "phone": "+14165554321", "last_contact_iso": "2026-03-12T14:00:00Z"}
+    ]
+  }
+}

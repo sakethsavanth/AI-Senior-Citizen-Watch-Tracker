@@ -2,6 +2,9 @@
   "scenario_id": "normal_day",
   "description": "Stable day: vitals in range, good sleep, adequate activity, meds taken.",
   "trigger_type": "scheduled",
+  "expected_risk": "low",
+  "expected_agents": ["vital_sync_agent", "medicine_agent", "health_records_agent"],
+  "expected_emergency": false,
   "health_data": {
     "heart_rate": 72,
     "spo2": 98,

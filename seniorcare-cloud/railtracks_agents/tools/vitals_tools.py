@@ -97,7 +97,8 @@ def assess_sleep(sleep_hours: float) -> dict:
         sleep_hours: Total hours of sleep in the last 24h period.
 
     Returns:
-        dict with category, sleep_hours, quality (poor/fair/good), and below_threshold flag.
+        dict with category, sleep_hours, quality (poor/fair/good), below_threshold flag,
+        and alert_family flag (True when quality is poor).
     """
     if sleep_hours < 4:
         quality = "poor"
@@ -110,6 +111,41 @@ def assess_sleep(sleep_hours: float) -> dict:
         "sleep_hours": sleep_hours,
         "quality": quality,
         "below_threshold": sleep_hours < SLEEP_LOW_THRESHOLD,
+        "alert_family": quality == "poor",
+    }
+
+
+@rt.function_node
+def sleep_hr_correlation(sleep_hours: float, heart_rate: float) -> dict:
+    """Correlate sleep duration with heart rate for clinical insight.
+
+    Args:
+        sleep_hours: Hours of sleep in last 24h.
+        heart_rate: Heart rate (24h average or spot reading).
+
+    Returns:
+        dict with correlation note and recommendation.
+    """
+    note = ""
+    recommendation = ""
+    if sleep_hours < SLEEP_LOW_THRESHOLD and heart_rate > 90:
+        note = "Poor sleep may explain elevated heart rate."
+        recommendation = "Prioritize rest and consider discussing sleep issues with your provider."
+    elif sleep_hours < 4 and heart_rate < HEART_RATE_LOW:
+        note = "Very low sleep with low heart rate — monitor closely."
+        recommendation = "If fatigue persists, contact your healthcare provider."
+    elif sleep_hours >= SLEEP_LOW_THRESHOLD and HEART_RATE_LOW <= heart_rate <= HEART_RATE_HIGH:
+        note = "Sleep and heart rate are both in healthy range."
+        recommendation = "Keep up the good habits!"
+    else:
+        note = f"Sleep={sleep_hours}h, HR={heart_rate}bpm — no strong correlation flagged."
+        recommendation = ""
+
+    return {
+        "sleep_hours": sleep_hours,
+        "heart_rate": heart_rate,
+        "correlation_note": note,
+        "recommendation": recommendation,
     }
 
 
@@ -122,7 +158,8 @@ def assess_activity(steps: int, last_movement_minutes: int) -> dict:
         last_movement_minutes: Minutes since last detected movement.
 
     Returns:
-        dict with category, steps, last_movement_minutes, status (critical/sedentary/active), and inactive_flag.
+        dict with category, steps, last_movement_minutes, status (critical/sedentary/active),
+        inactive_flag, alert_family flag, and recommendation.
     """
     if last_movement_minutes > 360:
         status = "critical"
@@ -130,12 +167,21 @@ def assess_activity(steps: int, last_movement_minutes: int) -> dict:
         status = "sedentary"
     else:
         status = "active"
+
+    recommendation = ""
+    if steps < 500:
+        recommendation = "Very low steps today. Consider a short walk or gentle stretches."
+    elif steps < 1000:
+        recommendation = "Steps are low. A 10-minute stroll outside could help."
+
     return {
         "category": "activity",
         "steps": steps,
         "last_movement_minutes": last_movement_minutes,
         "status": status,
         "inactive_flag": last_movement_minutes > INACTIVITY_HIGH_THRESHOLD,
+        "alert_family": status == "critical",
+        "recommendation": recommendation,
     }
 
 

@@ -180,6 +180,93 @@
 
 ---
 
+## 12.5. Backend test plan after adding the data folder scenarios
+
+> Use this plan once scenario files are added under `data/synthetic/scenarios/`.
+
+### A. Test data setup
+
+- Add canonical JSON payload files in `data/synthetic/scenarios/`:
+	- `normal_day.json`
+	- `sleep_deficit.json`
+	- `low_mood_trigger_call.json`
+	- `critical_vitals.json`
+	- `fall_detected.json`
+	- `low_pills_refill.json`
+- Keep one schema contract for all files based on `models/health_payload.py` fields.
+- Add a short README in the scenarios folder that defines required vs optional keys and expected agent outcomes per scenario.
+
+### B. Test layers (fast to deep)
+
+- Layer 1: Payload/model validation
+	- Goal: confirm each scenario is accepted by `HealthPayload.from_event()` and key validation rules.
+	- Add tests that fail on invalid ranges (example: out-of-range SpO2).
+- Layer 2: Deterministic logic tests
+	- Goal: verify `services/health_analyzer.py` and `utils/event_router.py` behavior independent of LLM output.
+	- Assert expected risk and required routes for each scenario.
+- Layer 3: Tool/agent local flow
+	- Goal: run Railtracks local flow and ensure expected agents are invoked.
+	- Reuse `tests/test_railtracks_local.py` with scenarios loaded from `data/synthetic/scenarios/`.
+- Layer 4: LLM connectivity and structured output
+	- Goal: verify OpenRouter key/model access and response shape.
+	- Use `tests/test_openrouter_api.py` first, then run end-to-end scenarios.
+- Layer 5: End-to-end critical path
+	- Goal: guarantee emergency and refill paths work for demo-critical cases.
+	- Add `tests/test_e2e_critical.py` using `critical_vitals.json` and `fall_detected.json`.
+
+### C. How to run backend tests
+
+From `seniorcare-cloud/`:
+
+```bash
+# 0) Environment check (OpenRouter key + model)
+python tests/test_openrouter_api.py --check-env
+
+# 1) LLM smoke test
+python tests/test_openrouter_api.py
+
+# 2) Existing local integration flow
+python tests/test_railtracks_local.py
+
+# 3) Lambda-style local integration flow
+python tests/test_local.py
+```
+
+If you are using the workspace venv on Windows:
+
+```powershell
+& "e:/hackathon/.venv/Scripts/python.exe" tests/test_openrouter_api.py --check-env
+& "e:/hackathon/.venv/Scripts/python.exe" tests/test_openrouter_api.py
+& "e:/hackathon/.venv/Scripts/python.exe" tests/test_railtracks_local.py
+& "e:/hackathon/.venv/Scripts/python.exe" tests/test_local.py
+```
+
+### D. Pass/fail checklist for backend readiness
+
+- `normal_day.json`:
+	- Pass: no emergency escalation, stable summary, no false high-risk.
+- `sleep_deficit.json`:
+	- Pass: sleep agent recommendations included; risk not silently downgraded.
+- `low_mood_trigger_call.json`:
+	- Pass: EmoCare sets call trigger and Calling path is invoked.
+- `low_pills_refill.json`:
+	- Pass: refill request path is invoked with deterministic refill decision.
+- `critical_vitals.json`:
+	- Pass: high/critical risk and family alert path active.
+- `fall_detected.json`:
+	- Pass: emergency escalation path always runs.
+
+### E. Recommended next test files to add
+
+- `tests/test_scenario_contracts.py`
+	- Validates every JSON file under `data/synthetic/scenarios/` against payload requirements.
+- `tests/test_router_rules.py`
+	- Pure deterministic assertions for route decisions by scenario.
+- `tests/test_e2e_critical.py`
+	- One strict critical-path test from input payload to final response.
+
+---
+
 ## 13. Quick reference — where things live
 
 | Area              | Main files |

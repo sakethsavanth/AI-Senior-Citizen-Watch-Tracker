@@ -12,7 +12,7 @@ import json
 import logging
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +148,28 @@ class HealthPayload:
     def is_mood_low(self) -> bool:
         """EmoCare: score < 3 → trigger call."""
         return self.mood_score is not None and self.mood_score < 3.0
+
+    # ── Range validation ──────────────────────
+    FIELD_RANGES: ClassVar[Dict[str, tuple]] = {
+        "heart_rate": (30, 220),
+        "spo2": (50, 100),
+        "steps": (0, 100_000),
+        "sleep_hours": (0, 24),
+        "pill_count": (0, 500),
+        "last_movement_minutes": (0, 1440),
+        "hrv_percent": (0, 100),
+        "mood_score": (1, 5),
+        "doses_missed_consecutive_days": (0, 365),
+    }
+
+    def validate_ranges(self) -> List:
+        """Check field values against clinical/physical ranges. Returns list of violation strings."""
+        errors = []
+        for field_name, (lo, hi) in self.FIELD_RANGES.items():
+            value = getattr(self, field_name, None)
+            if value is not None and not (lo <= value <= hi):
+                errors.append(f"{field_name}={value} out of range [{lo}, {hi}]")
+        return errors
 
     # ── Serialisation ──────────────────────────
     def to_dict(self) -> Dict[str, Any]:

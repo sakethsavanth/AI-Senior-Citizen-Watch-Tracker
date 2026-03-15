@@ -29,6 +29,7 @@ PHARMACY_API_URL = os.getenv("PHARMACY_API_URL", "https://pharmacy.example.com/a
 PHARMACY_API_KEY = os.getenv("PHARMACY_API_KEY", "")
 DEFAULT_REFILL_QTY = int(os.getenv("DEFAULT_REFILL_QTY", "30"))
 REQUEST_TIMEOUT = int(os.getenv("PHARMACY_TIMEOUT", "10"))
+PHARMACY_DEMO = os.getenv("PHARMACY_DEMO", "1").lower() in ("1", "true", "yes")
 
 
 class PharmacyAPI:
@@ -74,6 +75,11 @@ class PharmacyAPI:
         }
 
         logger.info("Requesting refill: %s", payload)
+
+        # Demo mode: always return simulated success for hackathon/testing
+        if PHARMACY_DEMO:
+            logger.info("PHARMACY_DEMO=1 — returning simulated refill.")
+            return self._simulate_refill(user_id, medication, quantity)
 
         try:
             response = self.session.post(endpoint, json=payload, timeout=REQUEST_TIMEOUT)

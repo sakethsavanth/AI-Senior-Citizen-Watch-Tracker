@@ -1,51 +1,66 @@
 """
-ElderHarmony – VitalSync Agent (Continuous Guardian)
-=====================================================
-24hr vital signs monitoring: HR, SpO2, HRV, fall detection, sleep,
-and activity patterns. Generates daily messages (7AM walk, 9PM sleep).
-HRV < 40% triggers doctor visit alert. Fall → emergency.
+Tool Registry — Central mapping of agent names to their tool lists.
+=====================================================================
+This is the key extensibility point for ElderHarmony.
+
+TO ADD A NEW TOOL:
+  1. Create a @rt.function_node function in the appropriate tools/*.py file
+  2. Import it below
+  3. Append it to the relevant agent's list in AGENT_TOOLS
+  That's it. No other files need to change.
 """
 
-import railtracks as rt
-
-from railtracks_agents.config import LLM
-from railtracks_agents.tools._tool_registry import get_tools
-
-VitalSyncAgent = rt.agent_node(
-    name="VitalSync Agent",
-    tool_nodes=get_tools("vital_sync"),
-    llm=LLM,
-    system_message=(
-        "You are VitalSync, the 24-hour vital signs guardian for an elderly patient. "
-        "You monitor heart rate (24h average), SpO2, HRV (as % of normal), fall events, "
-        "sleep duration, and physical activity.\n\n"
-        "CLINICAL THRESHOLDS:\n"
-        "- Heart rate: normal 50-120 BPM. Below 50 = bradycardia, above 120 = tachycardia.\n"
-        "- SpO2: below 92% = hypoxemia (critical).\n"
-        "- HRV: below 40% of normal = possible infection, recommend doctor visit.\n"
-        "- Fall detected: EMERGENCY — activate emergency protocol immediately.\n"
-        "- Sleep: below 6h = deficit, below 4h = critical.\n"
-        "- Activity: >4h idle = high concern, >6h idle = critical welfare check.\n\n"
-        "YOUR TASKS:\n"
-        "1. Call the assessment tools to evaluate each vital sign.\n"
-        "2. **FALL DETECTED = IMMEDIATE ACTION**: If assess_fall returns fall_detected=true, "
-        "call emergency_escalation RIGHT AWAY with the senior's emergency_contact as "
-        "senior_number, family contact as family_number, and reason 'Fall detected by VitalSync'. "
-        "Do NOT wait for other assessments — lives depend on speed.\n"
-        "3. Generate a daily message based on time of day:\n"
-        "   - Morning (6-10 UTC): Walk reminder ('Good morning! A 10-minute walk today can help.')\n"
-        "   - Evening (20-02 UTC): Sleep message ('HRV looks normal. Sleep well!')\n"
-        "   - Other: Vitals summary.\n"
-        "4. If HRV is low, append a doctor visit warning.\n"
-        "5. Report severity: critical (fall), high (HRV low), low (normal).\n"
-        "6. Set alert_family=true if severity is critical or high.\n\n"
-        "Return a JSON with: severity, daily_message, alert_family, emergency_action_taken, "
-        "and assessment details."
-    ),
-    manifest=rt.ToolManifest(
-        description="24-hour vital signs guardian. Monitors HR, SpO2, HRV, falls, sleep, and activity. Generates daily wellness messages.",
-        parameters=[
-            rt.llm.Parameter(name="health_data", description="JSON string of the complete health payload data", param_type="string"),
-        ],
-    ),
+from railtracks_agents.tools.vitals_tools import (
+    assess_vitals,
+    assess_hrv,
+    assess_fall,
+    assess_sleep,
+    assess_activity,
+    full_health_assessment,
 )
+from railtracks_agents.tools.medication_tools import (
+    assess_medication,
+    get_current_med_window,
+    request_pharmacy_refill,
+)
+from railtracks_agents.tools.mood_tools import (
+    assess_mood,
+    build_mood_recommendations,
+)
+from railtracks_agents.tools.communication_tools import (
+    call_senior,
+    alert_family_sms,
+    emergency_escalation,
+    pick_family_contact,
+)
+from railtracks_agents.tools.health_records_tools import (
+    get_medication_interactions,
+    get_lab_summary,
+    get_visit_prep,
+    build_family_dashboard,
+)
+
+
+AGENT_TOOLS = {
+    "vital_sync": [assess_vitals, assess_hrv, assess_fall, assess_sleep, assess_activity, emergency_escalation],
+    "activity": [assess_activity, assess_fall],
+    "sleep": [assess_sleep, assess_vitals],
+    "medicine": [assess_medication, get_current_med_window, request_pharmacy_refill],
+    "medication": [assess_medication, get_current_med_window],
+    "refill": [assess_medication, request_pharmacy_refill],
+    "emo_care": [assess_mood, build_mood_recommendations],
+    "calling": [call_senior, alert_family_sms, emergency_escalation, pick_family_contact],
+    "health_records": [get_medication_interactions, get_lab_summary, get_visit_prep, build_family_dashboard],
+}
+
+
+def get_tools(agent_name: str) -> list:
+    """Return the tool list for a given agent name.
+
+    Args:
+        agent_name: Key from AGENT_TOOLS (e.g. 'vital_sync', 'calling').
+
+    Returns:
+        List of @rt.function_node tools for the agent.
+    """
+    return AGENT_TOOLS.get(agent_name, [])

@@ -1,0 +1,26 @@
+{
+  "scenario_id": "critical_vitals",
+  "description": "Senior with tachycardia (HR=135) and hypoxemia (SpO2=88). Critical risk, must trigger Calling/emergency.",
+  "expected_risk": "high",
+  "expected_agents": ["vital_sync_agent", "medicine_agent", "calling_agent", "health_records_agent"],
+  "expected_emergency": true,
+  "health_data": {
+    "heart_rate": 135,
+    "spo2": 88,
+    "heart_rate_avg_24h": 135,
+    "spo2_avg_24h": 88,
+    "steps": 1200,
+    "sleep_hours": 5.5,
+    "pill_count": 6,
+    "last_movement_minutes": 90,
+    "hrv_percent": 42,
+    "fall_detected": false,
+    "mood_score": null,
+    "medication_name": "Blood Pressure",
+    "emergency_contact": "+14165551234",
+    "doses_missed_consecutive_days": 0,
+    "family_contacts": [
+      {"name": "Sarah", "phone": "+14165559876", "last_contact_iso": "2026-03-12T14:00:00Z"}
+    ]
+  }
+}
