@@ -147,7 +147,7 @@ def make_api_gateway_event(payload: dict) -> dict:
 
 
 def run_railtracks_test(scenario: dict) -> None:
-    """Run a single scenario through the Railtracks flow."""
+    """Run a single scenario through the orchestrator engine."""
     print(f"\n{DIVIDER}\n  SCENARIO: {scenario['name']}\n{DIVIDER}")
     print(f"  Input: {json.dumps(scenario['data'], indent=2)}\n")
 
@@ -162,21 +162,34 @@ def run_railtracks_test(scenario: dict) -> None:
         print(f"  Status: {status}")
 
         if status == 200:
-            flow_result = body.get("flow_result", "")
-            # Try to parse the flow result as JSON for pretty printing
-            try:
-                parsed = json.loads(flow_result) if isinstance(flow_result, str) else flow_result
-                risk = parsed.get("overall_risk", "N/A") if isinstance(parsed, dict) else "N/A"
-                agents = parsed.get("agents_invoked", []) if isinstance(parsed, dict) else []
-                print(f"  Overall Risk: {risk}")
-                if agents:
-                    print("  Agents invoked:")
-                    for agent in agents:
-                        name = agent if isinstance(agent, str) else agent.get("name", str(agent))
-                        print(f"     -> {name}")
-            except (json.JSONDecodeError, TypeError):
-                # Flow result is plain text — just show a snippet
-                print(f"  Result (truncated): {str(flow_result)[:500]}")
+            risk = body.get("overall_risk", "N/A")
+            agents = body.get("agents_invoked", [])
+            summary = body.get("summary", "")
+
+            print(f"  Overall Risk: {risk}")
+            if agents:
+                print("  Agents invoked:")
+                for agent in agents:
+                    name = agent if isinstance(agent, str) else agent.get("name", str(agent))
+                    print(f"     -> {name}")
+
+            # Show agent result highlights
+            for agent_name, agent_data in body.get("agent_results", {}).items():
+                if isinstance(agent_data, dict):
+                    highlights = []
+                    if agent_data.get("severity"):
+                        highlights.append(f"severity={agent_data['severity']}")
+                    if agent_data.get("action_taken"):
+                        highlights.append(f"action={agent_data['action_taken']}")
+                    if agent_data.get("refill_requested"):
+                        highlights.append("refill_requested")
+                    if agent_data.get("trigger_call"):
+                        highlights.append("trigger_call")
+                    if highlights:
+                        print(f"     [{agent_name}] {', '.join(highlights)}")
+
+            if summary:
+                print(f"\n  Summary: {summary[:300]}...")
         else:
             print(f"  Error: {body.get('error', 'Unknown')}")
 

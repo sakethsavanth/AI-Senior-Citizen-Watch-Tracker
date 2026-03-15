@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ElderHarmony – AI-powered senior care system
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 60
+    MemorySize: 512
+    Environment:
+      Variables:
+        OPENAI_API_KEY: !Ref OpenAIAPIKey
+        TWILIO_ACCOUNT_SID: !Ref TwilioAccountSID
+        TWILIO_AUTH_TOKEN: !Ref TwilioAuthToken
+        TWILIO_PHONE_NUMBER: !Ref TwilioPhoneNumber
+        SENIOR_PHONE_NUMBER: !Ref SeniorPhoneNumber
+        FAMILY_PHONE_NUMBER: !Ref FamilyPhoneNumber
+
+Parameters:
+  OpenAIAPIKey:
+    Type: String
+    Default: test
+    NoEcho: true
+  TwilioAccountSID:
+    Type: String
+    NoEcho: true
+  TwilioAuthToken:
+    Type: String
+    NoEcho: true
+  TwilioPhoneNumber:
+    Type: String
+  SeniorPhoneNumber:
+    Type: String
+  FamilyPhoneNumber:
+    Type: String
+
+Resources:
+  ElderHarmonyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: railtracks_agents.lambda_handler.lambda_handler
+      CodeUri: .
+      Description: ElderHarmony orchestrator – processes health data through 9 agents
+      Events:
+        HealthDataPost:
+          Type: Api
+          Properties:
+            Path: /health-data
+            Method: post
+        HealthDataOptions:
+          Type: Api
+          Properties:
+            Path: /health-data
+            Method: options
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/health-data"
+  FunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt ElderHarmonyFunction.Arn
